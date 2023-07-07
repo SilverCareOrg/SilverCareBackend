@@ -51,12 +51,14 @@ INSTALLED_APPS = [
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:3000',
     'http://localhost:3000',
     'http://localhost:8080',
     'http://127.0.0.1:8000'
 ]
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
+    'http://127.0.0.1:3000',
 )
 
 CSRF_COOKIE_SECURE=False
@@ -65,6 +67,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.JSONParser',
+    ],
 }
 
 SIMPLE_JWT = {
@@ -118,9 +125,9 @@ JWT_AUTH = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
