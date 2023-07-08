@@ -12,6 +12,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 import os
 import base64
+import random as rd
 
 BASE_IMG_PATH = "./services/images/"
 PATH_TO_FIMG = "../../SilverCareFrontend/src/images/"
@@ -59,9 +60,7 @@ class CreateServiceView(APIView):
             print(serializer.errors)
             return Response(serializer.errors, status=400)
 
-@api_view(["GET"])
-def get_all_services(request):
-    services = Service.objects.all()
+def get_services_helper(services):
     res = []
     bef = []
     
@@ -80,7 +79,14 @@ def get_all_services(request):
         res.append(serialized_service)
         bef.append(service.image)
         
+    return res, bef
+
+@api_view(["GET"])
+def get_all_services(request):
+    services = Service.objects.all()
+    res, bef = get_services_helper(services)
     fef = os.listdir(PATH_TO_FIMG)
+
     img_to_add = list(set(bef).difference(set(fef)))
     for img in img_to_add:
         content_to_write = ""
@@ -93,3 +99,24 @@ def get_all_services(request):
             f.write(content_to_write)
     
     return JsonResponse(res, safe = False)
+
+@api_view(["GET"])
+def get_homepage_random_services(request):
+    services = set(rd.choices(Service.objects.all(), k=6)) # k represents the number of services to be extracted
+    res, _ = get_services_helper(services)
+    return JsonResponse(res, safe = False)
+
+@api_view(["GET"])
+def get_homepage_best_selling_products(request):
+    services = Service.objects.all() # k represents the number of services to be extracted
+    res, _ = get_services_helper(services)
+    res = sorted(res, key=lambda x: float(x["rating"]), reverse=True)
+    
+    # We need 6 products, implement more complex logic later
+    
+    tmp = rd.choices(res, k = 6)
+    res.clear()
+    tmp = [res.append(x) for x in tmp if x not in res]
+    
+    return JsonResponse(res, safe = False)
+    
