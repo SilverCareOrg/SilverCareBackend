@@ -12,6 +12,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 def get_user_from_token_request(request):
     token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+    print(token)
     if not token:
         raise AuthenticationFailed('Unauthenticated')
 

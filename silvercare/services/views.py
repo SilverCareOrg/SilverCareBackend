@@ -73,7 +73,8 @@ def get_services_helper(services):
             "rating": str(service.rating),
             "img_path": service.image,
             "img_type": service.image_type,
-            "organiser": service.organiser
+            "organiser": service.organiser,
+            "service_id": service.id
         }
 
         res.append(serialized_service)
