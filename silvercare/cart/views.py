@@ -27,9 +27,9 @@ def add_to_cart(request):
     # Get the service to be added to cart
     base_service = Service.objects.get(id=data['service_id'])
     
-    if user.cart.cart_services.filter(base_service=base_service).exists():
-        return JsonResponse("Object already added to cart!", res = 200)
-    
+    if user.cart.cartservice_set.all().filter(base_service=base_service).exists():
+        return JsonResponse("Object already added to cart!", safe = False, status = 200)
+
     cart_service = CartService.objects.create(cart=user.cart,
                                               base_service=base_service,
                                               senior_name=data['senior_name'],
@@ -42,29 +42,50 @@ def add_to_cart(request):
     base_service.save()
     cart_service.save()
     user.save()
+    print(cart_service)
+    return JsonResponse("Added to cart successfully!", safe = False, status = 200)
 
-    return JsonResponse("Added to cart successfully!", res = 200)
-
-@api_view(["GET"])
-def get_cart(request):
-    user = get_user_from_token_request(request)
-    cart = user.cart
-    cart_services = cart.cart_services.all()
+def serialize_cart_services(cart_services):
     cart_services_json = []
     
     for cart_service in cart_services:
         cart_services_json.append({
-            "id": cart_service.id,
+            "service_id": cart_service.id,
             "service_name": cart_service.base_service.name,
             "service_price": cart_service.base_service.price,
+            "service_image_path": cart_service.base_service.image,
             "senior_name": cart_service.senior_name,
             "adult_name": cart_service.adult_name,
             "phone_number": cart_service.phone_number,
             "companion": cart_service.companion,
             "email": cart_service.email
         })
+        
+    return cart_services_json
+
+@api_view(["DELETE"])
+def remove_from_cart(request):
+    user = get_user_from_token_request(request)
+    data = json.loads(request.body)
+    cart_service = CartService.objects.get(id=data['id'])
+    cart_service.delete()
+    user.cart.save()
     
-    return JsonResponse(cart_services_json, res = 200)
+    cart_services = user.cart.cartservice_set.all()
+    cart_services_json = serialize_cart_services(cart_services)
+    
+    return JsonResponse(cart_services_json, safe = False, status = 200)    
+    
+    
+
+@api_view(["GET"])
+def get_cart(request):
+    user = get_user_from_token_request(request)
+    cart = user.cart
+    cart_services = cart.cartservice_set.all()
+    cart_services_json = serialize_cart_services(cart_services)
+    
+    return JsonResponse(cart_services_json, safe = False, status = 200)
 
 @api_view(["POST"])
 def checkout_cart(request):
@@ -84,9 +105,4 @@ def checkout_cart(request):
     
     cart.cart_services.all().delete()
     
-    return JsonResponse("Checkout successful!", res = 200)
-
-@api_view(["DELETE"])
-def remove_from_cart(request):
-    pass
-    
+    return JsonResponse("Checkout successful!", status = 200)
