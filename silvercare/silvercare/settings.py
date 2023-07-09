@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'services',
     'login',
+    'cart',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
