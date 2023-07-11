@@ -32,7 +32,12 @@ class CreateServiceView(APIView):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request):
-        serializer = ServiceSerializer(data=request.data)        
+        serializer = ServiceSerializer(data=request.data)   
+        user = get_user_from_token_request(request)
+        
+        if not user.is_staff:
+            return Response({'message': 'You are not authorized to add services'}, status=400)
+
         if serializer.is_valid():            
             name = serializer.validated_data.get('name')
             category = serializer.validated_data.get('category').lower()
