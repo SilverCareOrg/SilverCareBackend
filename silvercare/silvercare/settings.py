@@ -47,7 +47,16 @@ INSTALLED_APPS = [
     'services',
     'login',
     'cart',
+    'emailApp'
 ]
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST')  # or use Gmail's SMTP server: 'smtp.gmail.com'
+EMAIL_PORT = env('EMAIL_PORT')  # Replace with the appropriate port number
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_GMAIL_PASS')
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -55,11 +64,15 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:3000',
     'http://localhost:3000',
     'http://localhost:8080',
-    'http://127.0.0.1:8000'
+    'http://127.0.0.1:8000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001'
 ]
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001'
 )
 
 CSRF_COOKIE_SECURE=False

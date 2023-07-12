@@ -114,15 +114,19 @@ def get_homepage_random_services(request):
 
 @api_view(["GET"])
 def get_homepage_best_selling_products(request):
-    services = Service.objects.all() # k represents the number of services to be extracted
+    services = set(Service.objects.all()) 
     res, _ = get_services_helper(services)
     res = sorted(res, key=lambda x: float(x["rating"]), reverse=True)
     
     # We need 6 products, implement more complex logic later
     
-    tmp = rd.choices(res, k = 6)
+    tmp = rd.sample(res, k = 6 if len(res) > 6 else len(res)) # k represents the number of services to be extracted
     res.clear()
     tmp = [res.append(x) for x in tmp if x not in res]
-    
+
     return JsonResponse(res, safe = False)
+
+@api_view(["DELETE"])
+def delete_service(request):
+    pass
     
