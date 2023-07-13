@@ -1,0 +1,76 @@
+name: Django CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install -r optimize/requirements.txt
+    - name: Run Tests
+      run: |
+        python3 optimize/manage.py test
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+        DATABASE_USER: ${{ secrets.DATABASE_USER }}
+        EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+        EMAIL_PORT: ${{ secrets.DATABASE_PASSWORD }}
+        EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+        EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+        EMAIL_GMAIL_PASS: ${{ secrets.EMAIL_GMAIL_PASS }}
+        
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - name: Creating connection
+      shell: bash
+      env:
+        SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
+        ssh-keyscan -H $SERVER_ADDR > ~/.ssh/known_hosts
+    - name: Publish
+      shell: bash
+      env:
+        SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
+      run: |
+        scp -prq ./optimize ubuntu@${SERVER_ADDR}:~
+    - name: Run app
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_ADDR }}
+        username: ubuntu
+        key: ${{ secrets.SERVER_CONNECT_KEY }}
+        port: 22
+        script_stop: true
+        script: |
+          ./setup_env.sh
+          cd optimize
+          python3 -m pip install --upgrade pip
+          pip3 install -r requirements.txt
+          python3 manage.py makemigrations
+          python3 manage.py migrate
+          #python3 manage.py crontab remove
+          #python3 manage.py crontab add
+          screen -X -S backend quit || true
+          screen -dmS backend python3 manage.py runserver
+        
