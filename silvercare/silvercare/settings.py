@@ -14,6 +14,8 @@ from pathlib import Path
 import environ
 from datetime import timedelta
 import os
+import pymysql
+pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -61,6 +63,11 @@ EMAIL_HOST_PASSWORD = env('EMAIL_GMAIL_PASS')
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_DOMAIN = 'thesilvercare.com'
+
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
@@ -70,14 +77,16 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:3001',
     'http://127.0.0.1:3001',
-    'www.thesilvercare.com'
+    'https://www.thesilvercare.com',
+    'http://www.thesilvercare.com'
 ]
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:3001',
     'http://127.0.0.1:3001',
-    'www.thesilvercare.com'
+    'https://www.thesilvercare.com',
+    'http://www.thesilvercare.com'
 )
 
 CSRF_COOKIE_SECURE=False
@@ -216,7 +225,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Bucharest'
 
 USE_I18N = True
 

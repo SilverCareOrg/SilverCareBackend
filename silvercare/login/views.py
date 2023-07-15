@@ -77,8 +77,8 @@ def signup(request):
 		
   
 		user.is_staff = False
-		user.save()
 		user.is_active = True
+		user.save()
 		empty_cart.save()
   
 		return JsonResponse("Successfully signed up!", safe = False, status = 200)

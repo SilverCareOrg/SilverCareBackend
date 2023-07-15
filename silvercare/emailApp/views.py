@@ -12,3 +12,6 @@ def send_email(request):
 
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list)
     return HttpResponse('Email sent', status = 200)
+
+def test_func(request):
+    pass
