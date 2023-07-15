@@ -13,9 +13,13 @@ from rest_framework.response import Response
 import os
 import base64
 import random as rd
+import environ
+
+env = environ.Env()
+environ.Env.read_env()
 
 BASE_IMG_PATH = "./services/images/"
-PATH_TO_FIMG = "../../SilverCareFrontend/src/images/"
+PATH_TO_FIMG = env("PATH_TO_FIMG")
 
 class ServiceSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
