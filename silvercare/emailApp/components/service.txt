@@ -6,5 +6,6 @@
         <li><strong>Nume senior:</strong> [Nume Senior]</li>
         <li><strong>Nume adult:</strong> [Nume Adult]</li>
         <li><strong>Însoțitor:</strong> [Însoțitor]</li>
+        <li><strong>Număr de telefon:</strong> [Număr de telefon]</li>
     </ul>
 </li>
