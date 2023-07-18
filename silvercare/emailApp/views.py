@@ -1,7 +1,7 @@
 from django.core.mail import send_mail
 from django.shortcuts import render
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from services.models import PurchasedService
@@ -12,6 +12,7 @@ from datetime import datetime
 import string
 import random as rd
 import socket
+import json
 
 # Environment variables
 env = environ.Env()
@@ -51,11 +52,12 @@ def transfer_cart_to_purchase(cart_services, user):
 
 @api_view(['POST'])
 def checkout_send_email(request):
-    res = socket.getaddrinfo('smtp.gmail.com', 587, socket.AF_INET, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
-    print(res)
-    
     user = get_user_from_token_request(request)
     cart = user.cart
+    cart_services = cart.cartservice_set.all()
+    
+    if len(cart_services) == 0:
+        return JsonResponse({"message":"Nu exista servicii in cos!"}, status = 200)
 
     introduction = ""
     with open('./emailApp/components/introduction.txt', 'r', encoding='utf-8') as f:
@@ -74,7 +76,7 @@ def checkout_send_email(request):
     
     activities = []
     total_price = 0
-    for service in cart.cartservice_set.all():
+    for service in cart_services:
         base_service = service.base_service
         price = "Gratis" if base_service.price == 'free' else base_service.price
 
@@ -102,6 +104,6 @@ def checkout_send_email(request):
     alternative_plain_message = ""
     recipient_list = [user.email]
     send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
-    transfer_cart_to_purchase(cart.cartservice_set.all(), user)
-    return HttpResponse('Email sent', status = 200)
+    transfer_cart_to_purchase(cart_services, user)
+    return JsonResponse('Email sent', safe = False, status = 200)
 
