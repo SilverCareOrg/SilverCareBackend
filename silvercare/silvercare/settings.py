@@ -15,6 +15,7 @@ import environ
 from datetime import timedelta
 import os
 import pymysql
+
 pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,7 +33,7 @@ environ.Env.read_env()
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*', 'www.thesilvercare.com']
 
@@ -56,12 +57,13 @@ INSTALLED_APPS = [
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env('EMAIL_HOST')  # or use Gmail's SMTP server: 'smtp.gmail.com'
-EMAIL_PORT = env('EMAIL_PORT')  # Replace with the appropriate port number
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_GMAIL_PASS')
 EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'#env('EMAIL_HOST')  # or use Gmail's SMTP server: 'smtp.gmail.com'
+EMAIL_PORT = 587#env('EMAIL_PORT')  # Replace with the appropriate port number
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = False
