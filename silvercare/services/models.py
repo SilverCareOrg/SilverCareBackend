@@ -36,7 +36,7 @@ class PurchasedService(models.Model):
     senior_name = models.CharField(max_length=100)
     adult_name = models.CharField(max_length=100, null = True)
     phone_number = models.CharField(max_length=100)
-    insotitor = models.CharField(max_length=100, null = True)
+    companion = models.CharField(max_length=100, null = True)
     email = models.CharField(max_length=100)
 
 class CartService(models.Model):
