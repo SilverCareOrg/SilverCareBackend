@@ -12,6 +12,31 @@ from rest_framework.decorators import api_view
 import json
 from .utils import generate_jwt_token, get_user_from_token_request
 from cart.models import Cart
+from django.utils import timezone
+from rest_framework.response import Response
+from django.utils.dateparse import parse_datetime
+
+def handle_bad_login_request(request):
+	login_attempts = request.session.get('login_attempts', 0)
+	cooldown = request.session.get('cooldown', None)
+	print(login_attempts, cooldown, timezone.now())
+
+	request.session['login_attempts'] = login_attempts + 1
+
+	if login_attempts >= 3:
+		if cooldown is not None:
+			cooldown = parse_datetime(cooldown)
+	 
+			if cooldown < timezone.now():
+				request.session['login_attempts'] = 0
+				request.session['cooldown'] = None
+		else:
+			request.session['cooldown'] = (timezone.now() + timezone.timedelta(minutes=0)).isoformat()
+	 
+		return JsonResponse({'error': 'Too many login attempts. Please try again in 2 minutes.'}, status=429, safe = False)
+	else:
+		attempts_left = 3 - login_attempts
+		return JsonResponse({'error': f'Incorrect credentials. {attempts_left} attempts left.'}, status=401, safe = False)
 
 @csrf_exempt
 @api_view(["POST"])
@@ -23,12 +48,15 @@ def login(request):
 		password = data['password']
 
 		if not User.objects.filter(email=email).exists():
-			return HttpResponse("Failed to log in!", status = 400)
+			return handle_bad_login_request(request)
 
 		shadow_user = User.objects.get(email=email)
 		user = authenticate(request, username=shadow_user.username, password=password)
-
-		if user is not None:
+		token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+		
+		if user is not None or not token:
+			user = shadow_user if user is None else user
+      
 			token = generate_jwt_token(user, email)
 			user.is_active = True
 			user.save()
@@ -43,8 +71,9 @@ def login(request):
 
 			return response
 		else:
-			return JsonResponse("Failed to log in!", safe = False, status = 400)
-	return JsonResponse("Failed to log in!", safe = False)
+			return handle_bad_login_request(request)
+
+	return JsonResponse("Failed to log in!", safe = False, status = 400)
 
 @csrf_exempt
 @api_view(["POST"])
@@ -73,7 +102,7 @@ def signup(request):
   
 		empty_cart = Cart.objects.create()
 		user = User.objects.create_user(username=username, email=email, password=password,
-                                  cart=empty_cart)
+								  cart=empty_cart)
 		
   
 		user.is_staff = False
@@ -98,4 +127,41 @@ def check_permissions(request):
 		res['isAdmin'] = True
 
 	return JsonResponse(res, status = 200)    
+
+@api_view(["GET"])
+def get_user_role(request):
+	user = get_user_from_token_request(request)
+
+	if user.is_staff:
+		return JsonResponse({"role":"staff"}, status = 200, safe = False)
+
+	if user.is_superuser:
+		return JsonResponse({"role":"admin"}, status = 200, safe = False)
+ 
+	return JsonResponse({"role":"user"}, status = 200, safe = False)
 	
+# @api_view(["POST"])
+# def httponly_get_test(request):
+# 	email = "stefan@stefan.com"
+# 	password = "stefan"
+# 	shadow_user = User.objects.get(email=email)
+# 	user = authenticate(request, username=shadow_user.username, password=password)
+# 	token = generate_jwt_token(user, email)
+
+# 	response = JsonResponse(token, status = 200, safe = False)
+# 	expiration = datetime.datetime.utcnow() + datetime.timedelta(days=30)
+# 	response.set_cookie('token', token, 
+# 						expires = expiration,
+# 						httponly = True,
+# 						samesite='None')
+# 	response['Access-Control-Allow-Credentials'] = True
+
+# 	return response
+
+# @api_view(["POST"])
+# def httponly_post_test(request):
+#     jwt_token = request.COOKIES.get('token')
+#     print(jwt_token)
+#     print(request.COOKIES)
+	
+#     return JsonResponse("Success", status = 200, safe = False)
