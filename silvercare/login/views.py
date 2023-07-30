@@ -31,7 +31,7 @@ def handle_bad_login_request(request):
 				request.session['login_attempts'] = 0
 				request.session['cooldown'] = None
 		else:
-			request.session['cooldown'] = (timezone.now() + timezone.timedelta(minutes=0)).isoformat()
+			request.session['cooldown'] = (timezone.now() + timezone.timedelta(minutes=2)).isoformat()
 	 
 		return JsonResponse({'error': 'Too many login attempts. Please try again in 2 minutes.'}, status=429, safe = False)
 	else:
