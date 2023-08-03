@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 import jwt
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.models import User
@@ -115,13 +116,25 @@ def signup(request):
 		return JsonResponse("Failed to sign up!", safe = False, status = 400)
 	return JsonResponse("Failed to sign up!", safe = False, status = 400)
 
+@api_view(["POST"])
+def logout(request):
+    response = JsonResponse({'message': 'Logout successful'}, status = 200, safe = False)
+    
+    if not settings.DEBUG:
+        response.delete_cookie('token')
+        
+    return response
+
 @api_view(["GET"])
 def check_permissions(request):
-	user = get_user_from_token_request(request)
-
 	res = {
 		"isAdmin": False
 	}
+    
+	try:
+		user = get_user_from_token_request(request)
+	except:
+		return JsonResponse(res, status = 200)
 
 	if user.is_staff:
 		res['isAdmin'] = True
