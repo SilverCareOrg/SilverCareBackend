@@ -13,6 +13,7 @@ import string
 import random as rd
 import socket
 import json
+from services.models import Service
 
 # Environment variables
 env = environ.Env()
@@ -50,15 +51,7 @@ def transfer_cart_to_purchase(cart_services, user):
     cart_services.delete()
     user.save()
 
-@api_view(['POST'])
-def checkout_send_email(request):
-    user = get_user_from_token_request(request)
-    cart = user.cart
-    cart_services = cart.cartservice_set.all()
-    
-    if len(cart_services) == 0:
-        return JsonResponse({"message":"Nu exista servicii in cos!"}, status = 200)
-
+def send_db_user_email_message(cart_services, user):
     introduction = ""
     SC_introduction = f"<h2>Email client: {user.email}<h2>"
     with open('./emailApp/components/introduction.txt', 'r', encoding='utf-8') as f:
@@ -120,7 +113,93 @@ def checkout_send_email(request):
                 "</ul>"
     recipient_list = ["hello@thesilvercare.com"]
     send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+
+@api_view(['POST'])
+def checkout_send_email(request):
+    user = get_user_from_token_request(request)
+    cart = user.cart
+    cart_services = cart.cartservice_set.all()
     
+    if len(cart_services) == 0:
+        return JsonResponse({"message":"Nu exista servicii in cos!"}, status = 200)
+
+    send_db_user_email_message(cart_services, user)
+
     transfer_cart_to_purchase(cart_services, user)
+    return JsonResponse('Email sent', safe = False, status = 200)
+
+def send_guest_user_email_message(command_email, cart_services):
+    introduction = ""
+    SC_introduction = f"<h2>Email client: {command_email}<h2>"
+    with open('./emailApp/components/introduction.txt', 'r', encoding='utf-8') as f:
+        introduction = f.read()
+        introduction = introduction.replace("[Nume Client]", "cumpărător")
+        introduction = introduction.replace("[Număr Comandă]",generate_command_number())
+        introduction = introduction.replace("[Data Comenzii]", datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+        
+        SC_introduction += "<h3>Detalii comandă" + introduction.split("Detalii comandă")[1]
+        
+    footer = ""
+    with open('./emailApp/components/footer.txt', 'r', encoding='utf-8') as f:
+        footer = f.read()
+    
+    service_template = ""
+    with open('./emailApp/components/service.txt', 'r', encoding='utf-8') as f:
+        service_template = f.read()
+    
+    activities = []
+    total_price = 0
+    for service in cart_services:
+        base_service = Service.objects.get(id=service["service_id"])
+        price = "Gratis" if base_service.price == 'free' else base_service.price
+
+        html_service = service_template.replace("[Nume Serviciu]", base_service.name)
+        html_service = html_service.replace("[Preț Serviciu]", price)
+        html_service = html_service.replace("[Organizator]", base_service.organiser)
+        html_service = html_service.replace("[Nume Senior]", service["senior_name"])
+        html_service = html_service.replace("[Nume Adult]", service["adult_name"])
+        html_service = html_service.replace("[Însoțitor]", service["companion"])
+        html_service = html_service.replace("[Număr de telefon]", service["phone_number"])
+        
+        total_price += float(base_service.price) if base_service.price != 'free' else 0
+        activities.append(html_service)
+    
+    introduction = introduction.replace("[Total Comandă]", str(total_price))
+    
+    alternative_plain_message = ""
+    
+    # Send email to client
+    subject = 'Confirmarea comenzii tale'
+    message = "<html><body>" +\
+                introduction +\
+                "<ul>" +\
+                "".join(activities) +\
+                "</ul>" +\
+                footer +\
+                "</body></html>"
+    
+    recipient_list = [command_email]
+    send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+    
+    # Send email to SilverCare
+    subject = "Comandă nouă"
+    message = "<html><body>" +\
+                SC_introduction +\
+                "<ul>" +\
+                "".join(activities) +\
+                "</ul>"
+    recipient_list = ["hello@thesilvercare.com"]
+    send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+
+
+@api_view(['POST'])
+def guest_checkout_send_email(request):
+    data = json.loads(request.body)["checkout_data"]
+
+    email = data["email"]
+    services = data["services"]
+
+    send_guest_user_email_message(email, services)
+    
     return JsonResponse('Email sent', safe = False, status = 200)
 
