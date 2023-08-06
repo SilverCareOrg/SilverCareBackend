@@ -37,4 +37,5 @@ jobs:
         EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
         EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
         EMAIL_GMAIL_PASS: ${{ secrets.EMAIL_GMAIL_PASSWORD }}
+        PATH_TO_FIMG: ${{ secrets.PATH_TO_FIMG }}
         
