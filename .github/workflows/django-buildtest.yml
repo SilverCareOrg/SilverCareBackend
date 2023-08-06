@@ -47,10 +47,10 @@ jobs:
       env:
         PRIVATE_KEY: ${{ secrets.SERVER_CONNECT_KEY }}
         SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
-      # run: |
-      #   install -m 600 -D /dev/null ~/.ssh/id_rsa
-      #   echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
-      #   ssh-keyscan -H $SERVER_ADDR > ~/.ssh/known_hosts
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
+        ssh-keyscan -H $SERVER_ADDR > ~/.ssh/known_hosts
     - name: Publish
       shell: bash
       env:
