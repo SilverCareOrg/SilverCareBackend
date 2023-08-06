@@ -68,11 +68,11 @@ jobs:
         port: 22
         script_stop: true
         script: |
-          sudo ./setup_env.sh
+          ./setup_env.sh
           cd silvercare
-          sudo python3 -m pip install --upgrade pip
-          sudo pip3 install -r requirements.txt
-          sudo python3 manage.py makemigrations
-          sudo python3 manage.py migrate
-          sudo screen -X -S backend quit || true
-          sudo screen -dmS backend python3 manage.py runserver
+          python3 -m pip install --upgrade pip
+          pip3 install -r requirements.txt
+          python3 manage.py makemigrations
+          python3 manage.py migrate
+          screen -X -S backend quit || true
+          screen -dmS backend python3 manage.py runserver
