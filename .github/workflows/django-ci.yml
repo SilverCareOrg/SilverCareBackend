@@ -1,0 +1,40 @@
+name: Django CI
+
+on:
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        python3 -m pip install --upgrade pip
+        pip3 install -r silvercare/requirements.txt
+    - name: Run Tests
+      run: |
+        python3 silvercare/manage.py test
+      env:
+         SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+        DATABASE_USER: ${{ secrets.DATABASE_USER }}
+        DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+        EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+        EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+        EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+        EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+        EMAIL_GMAIL_PASS: ${{ secrets.EMAIL_GMAIL_PASSWORD }}
+        
