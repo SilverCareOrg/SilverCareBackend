@@ -47,6 +47,8 @@ jobs:
       env:
         PRIVATE_KEY: ${{ secrets.SERVER_CONNECT_KEY }}
         SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
+      
+      # Connection with server
       run: |
         install -m 600 -D /dev/null ~/.ssh/id_rsa
         echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
