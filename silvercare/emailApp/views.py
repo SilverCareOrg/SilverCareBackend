@@ -102,7 +102,7 @@ def send_db_user_email_message(cart_services, user):
                 "</body></html>"
     
     recipient_list = [user.email]
-    send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+    # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
     
     # Send email to SilverCare
     subject = "Comandă nouă"
@@ -112,7 +112,7 @@ def send_db_user_email_message(cart_services, user):
                 "".join(activities) +\
                 "</ul>"
     recipient_list = ["hello@thesilvercare.com"]
-    send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+    # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
 
 @api_view(['POST'])
 def checkout_send_email(request):
@@ -179,7 +179,7 @@ def send_guest_user_email_message(command_email, cart_services):
                 "</body></html>"
     
     recipient_list = [command_email]
-    send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+    # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
     
     # Send email to SilverCare
     subject = "Comandă nouă"
@@ -189,7 +189,7 @@ def send_guest_user_email_message(command_email, cart_services):
                 "".join(activities) +\
                 "</ul>"
     recipient_list = ["hello@thesilvercare.com"]
-    send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+    # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
 
 
 @api_view(['POST'])
