@@ -52,8 +52,13 @@ class CreateServiceView(APIView):
             file = request.FILES.get('file')
             image_type = str(file).split('.')[-1]
 
-            f = open(os.path.join(os.path.dirname(__file__), 'images/' + str(file)), 'wb')
+            if "/var/www" in PATH_TO_FIMG:
+                f = open(PATH_TO_FIMG, 'wb')
+            else:
+                f = open(os.path.join(os.path.dirname(__file__), 'images/' + str(file)), 'wb')
+
             f.write(file.read())
+            f.close()
             
             service = Service.objects.create(name=name,
                                              category=category,
@@ -97,16 +102,17 @@ def get_all_services(request):
     res, bef = get_services_helper(services)
     fef = os.listdir(PATH_TO_FIMG)
 
-    img_to_add = list(set(bef).difference(set(fef)))
-    for img in img_to_add:
-        content_to_write = ""
-        print(img)
-        with open(BASE_IMG_PATH + img, "rb") as image_file:
-            content_to_write = image_file.read()
-        
-        with open(PATH_TO_FIMG + img, "wb") as f:
-            print("Saving ... " + img)
-            f.write(content_to_write)
+    if not "/var/www" in PATH_TO_FIMG:
+        img_to_add = list(set(bef).difference(set(fef)))
+        for img in img_to_add:
+            content_to_write = ""
+            print(img)
+            with open(BASE_IMG_PATH + img, "rb") as image_file:
+                content_to_write = image_file.read()
+            
+            with open(PATH_TO_FIMG + img, "wb") as f:
+                print("Saving ... " + img)
+                f.write(content_to_write)
     
     return JsonResponse(res, safe = False)
 
