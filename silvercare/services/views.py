@@ -53,7 +53,7 @@ class CreateServiceView(APIView):
             image_type = str(file).split('.')[-1]
 
             if "/var/www" in PATH_TO_FIMG:
-                f = open(PATH_TO_FIMG, 'wb')
+                f = open(PATH_TO_FIMG + str(file), 'wb')
             else:
                 f = open(os.path.join(os.path.dirname(__file__), 'images/' + str(file)), 'wb')
 
