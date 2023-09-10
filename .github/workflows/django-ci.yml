@@ -40,6 +40,6 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       run: |
         echo "${{ secrets.SECRET_KEY }}"
-        sudo python3 silvercare/manage.py test
+        sudo python3.9 silvercare/manage.py test
      
         
