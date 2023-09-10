@@ -37,6 +37,8 @@ jobs:
         EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
         EMAIL_GMAIL_PASS: ${{ secrets.EMAIL_GMAIL_PASSWORD }}
         PATH_TO_FIMG: ${{ secrets.PATH_TO_FIMG }}
+        BASE_URL: ${{ secrets.BASE_URL }}
+        STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
   deploy:
     runs-on: ubuntu-latest
     needs: build
