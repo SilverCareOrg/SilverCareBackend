@@ -25,19 +25,20 @@ jobs:
         sudo python3 -m pip install --upgrade pip
         sudo pip3 install -r silvercare/requirements.txt
     - name: Run Tests
+      env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          EMAIL_GMAIL_PASS: ${{ secrets.EMAIL_GMAIL_PASSWORD }}
+          PATH_TO_FIMG: ${{ secrets.PATH_TO_FIMG }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       run: |
         sudo python3 silvercare/manage.py test
-      env:
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-        DATABASE_USER: ${{ secrets.DATABASE_USER }}
-        DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-        EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
-        EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
-        EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
-        EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
-        EMAIL_GMAIL_PASS: ${{ secrets.EMAIL_GMAIL_PASSWORD }}
-        PATH_TO_FIMG: ${{ secrets.PATH_TO_FIMG }}
-        BASE_URL: ${{ secrets.BASE_URL }}
-        STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+     
         
