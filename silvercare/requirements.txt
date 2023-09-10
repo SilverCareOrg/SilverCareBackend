@@ -8,3 +8,4 @@ django-environ==0.10.0
 django-crontab==0.7.1
 django-environ==0.10.0
 secure-smtplib==0.1.1
+stripe==6.4.0

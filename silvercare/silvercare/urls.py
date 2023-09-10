@@ -30,4 +30,5 @@ urlpatterns = [
     path('', include('services.urls')),
     path('', include('cart.urls')),
     path('', include('emailApp.urls')),
+    path('', include('payments.urls')),
 ]
