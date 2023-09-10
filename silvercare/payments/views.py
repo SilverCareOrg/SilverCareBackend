@@ -31,8 +31,7 @@ def create_checkout_session(request):
         if len(services) == 0:
             return HttpResponse({"message":"Nu exista servicii in cos!"}, status = 200)
 
-    line_items = []
-    
+    line_items = []    
     for service in services:
         if isinstance(service, CartService):
             base_service = service.base_service
