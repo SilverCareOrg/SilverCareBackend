@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'services',
     'login',
     'cart',
-    'emailApp'
+    'emailApp',
+    'payments',
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
