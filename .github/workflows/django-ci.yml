@@ -11,33 +11,32 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: [3.9]  # Specify Python 3.9 here
 
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v2  # Use actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo python3 -m pip install --upgrade pip
-        sudo pip3 install -r silvercare/requirements.txt
+        python -m pip install --upgrade pip  # Use python explicitly
+        pip install -r silvercare/requirements.txt  # Use pip explicitly
     - name: Run Tests
-      run: |
-        sudo python3 silvercare/manage.py test
       env:
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-        DATABASE_USER: ${{ secrets.DATABASE_USER }}
-        DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-        EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
-        EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
-        EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
-        EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
-        EMAIL_GMAIL_PASS: ${{ secrets.EMAIL_GMAIL_PASSWORD }}
-        PATH_TO_FIMG: ${{ secrets.PATH_TO_FIMG }}
-        BASE_URL: ${{ secrets.BASE_URL }}
-        STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-        
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          EMAIL_GMAIL_PASS: ${{ secrets.EMAIL_GMAIL_PASSWORD }}
+          PATH_TO_FIMG: ${{ secrets.PATH_TO_FIMG }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      run: |
+        python silvercare/manage.py test  # Use python explicitly
