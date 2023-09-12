@@ -39,6 +39,4 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       run: |
-        sudo python3.9 silvercare/manage.py test
-     
-        
+        python silvercare/manage.py test  # Use python explicitly
