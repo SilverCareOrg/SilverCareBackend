@@ -14,3 +14,5 @@ class Payment(models.Model):
 class Checkout(models.Model):
     payment_intent_id = models.CharField(max_length=255)
     metadata = models.CharField(max_length=1000)
+
+
