@@ -11,19 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: [3.9]  # Specify Python 3.9 here
 
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v2  # Use actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo python3 -m pip install --upgrade pip
-        sudo pip3 install -r silvercare/requirements.txt
+        python -m pip install --upgrade pip  # Use python explicitly
+        pip install -r silvercare/requirements.txt  # Use pip explicitly
     - name: Run Tests
       env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -39,6 +39,6 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       run: |
-        sudo python3 silvercare/manage.py test
+        sudo python3.9 silvercare/manage.py test
      
         
