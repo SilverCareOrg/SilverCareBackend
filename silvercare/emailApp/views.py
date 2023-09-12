@@ -51,7 +51,7 @@ def transfer_cart_to_purchase(cart_services, user):
     cart_services.delete()
     user.save()
 
-def send_db_user_email_message(cart_services, user):
+def send_db_user_email_message(cart_services, user, user_email):
     introduction = ""
     SC_introduction = f"<h2>Email client: {user.email}<h2>"
     with open('./emailApp/components/introduction.txt', 'r', encoding='utf-8') as f:
@@ -101,8 +101,8 @@ def send_db_user_email_message(cart_services, user):
                 footer +\
                 "</body></html>"
     
-    recipient_list = [user.email]
-    # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+    recipient_list = [user_email]
+    send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
     
     # Send email to SilverCare
     subject = "Comandă nouă"
@@ -114,16 +114,16 @@ def send_db_user_email_message(cart_services, user):
     recipient_list = ["hello@thesilvercare.com"]
     # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
 
-@api_view(['POST'])
-def checkout_send_email(request):
-    user = get_user_from_token_request(request)
+# @api_view(['POST'])
+def checkout_send_email(user, user_email):
+    # user = get_user_from_token_request(request)
     cart = user.cart
     cart_services = cart.cartservice_set.all()
     
     if len(cart_services) == 0:
         return JsonResponse({"message":"Nu exista servicii in cos!"}, status = 200)
 
-    send_db_user_email_message(cart_services, user)
+    send_db_user_email_message(cart_services, user, user_email)
 
     transfer_cart_to_purchase(cart_services, user)
     return JsonResponse('Email sent', safe = False, status = 200)
@@ -179,7 +179,7 @@ def send_guest_user_email_message(command_email, cart_services):
                 "</body></html>"
     
     recipient_list = [command_email]
-    # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
+    send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
     
     # Send email to SilverCare
     subject = "Comandă nouă"
@@ -192,12 +192,12 @@ def send_guest_user_email_message(command_email, cart_services):
     # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
 
 
-@api_view(['POST'])
-def guest_checkout_send_email(request):
-    data = json.loads(request.body)["checkout_data"]
+# @api_view(['POST'])
+def guest_checkout_send_email(services, email):
+    # data = json.loads(request.body)["checkout_data"]
 
-    email = data["email"]
-    services = data["services"]
+    # email = data["email"]
+    # services = data["services"]
 
     send_guest_user_email_message(email, services)
     
