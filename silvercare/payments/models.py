@@ -14,5 +14,9 @@ class Payment(models.Model):
 class Checkout(models.Model):
     payment_intent_id = models.CharField(max_length=255)
     metadata = models.CharField(max_length=1000)
+    checkout_email = models.CharField(max_length=255, null=True)
+    
+class TemporaryGuestMetadata(models.Model):
+    metadata = models.CharField(max_length=3000)
 
 

@@ -12,9 +12,10 @@ import environ
 from rest_framework.decorators import api_view
 from login.utils import get_user_from_token_request
 from services.models import Service, CartService
-from .models import Payment, Checkout
+from .models import Payment, Checkout, TemporaryGuestMetadata
 from django.contrib.auth.models import User
 import time
+from emailApp.views import checkout_send_email, guest_checkout_send_email
 
 env = environ.Env()
 environ.Env.read_env()
@@ -27,8 +28,11 @@ def create_checkout_session(request):
     data = json.loads(request.body)
 
     if data["isGuest"] == True:
-        services = data["services"]      
-        metadata = {'user_id': 'guest'}
+        services = data["services"]   
+        tmp_obj = TemporaryGuestMetadata.objects.create(metadata=json.dumps(services))
+           
+        metadata = {'user_id': 'guest',
+                    'temporary_guest_metadata': tmp_obj.id}
     else:
         user = get_user_from_token_request(request)
         cart = user.cart
@@ -57,7 +61,6 @@ def create_checkout_session(request):
                 },
             "quantity": 1,
         })
-
     try:
         checkout_session = stripe.checkout.Session.create(
             line_items=line_items,
@@ -77,6 +80,9 @@ def match_checkout_payment(payment_obj, checkout_obj):
     metadata = json.loads(checkout_obj.metadata)
     if metadata["user_id"] == "guest":
         payment_obj.user = None
+        tmp_obj = TemporaryGuestMetadata.objects.get(id=metadata["temporary_guest_metadata"])
+        
+        guest_checkout_send_email(json.loads(tmp_obj.metadata), checkout_obj.checkout_email)
     else:
         user = User.objects.get(id=metadata["user_id"])
 
@@ -84,6 +90,8 @@ def match_checkout_payment(payment_obj, checkout_obj):
             return JsonResponse({'status': 'Internal error at payment_intent.succeeded'}, status=500)
 
         payment_obj.user = user
+        
+        checkout_send_email(user, checkout_obj.checkout_email)
 
     payment_obj.save()
 
@@ -124,7 +132,9 @@ def stripe_webhook(request):
         payment_intent_data = event.data.get('object', {})
         payment_intent_id = payment_intent_data.get('payment_intent')
 
-        checkout_obj = Checkout.objects.create(payment_intent_id=payment_intent_id, metadata=json.dumps(payment_intent_data.get('metadata')))
+        checkout_obj = Checkout.objects.create(payment_intent_id=payment_intent_id,
+                                               metadata=json.dumps(payment_intent_data.get('metadata')),
+                                               checkout_email = payment_intent_data.get('customer_details', {}).get('email'))
 
         if checkout_obj is None:
             return JsonResponse({'status': 'Internal error at checkout.session.completed'}, status=500)
@@ -141,3 +151,16 @@ def stripe_webhook(request):
         pass
 
     return JsonResponse({'status': 'Webhook received successfully'}, status=200)
+
+@api_view(['GET'])
+def check_payment_status(request, checkout_session_id):
+    try:
+        checkout_session = stripe.checkout.Session.retrieve(checkout_session_id)
+
+        if checkout_session.payment_status == "paid":
+            return JsonResponse({"status": "completed"}, status=200)
+
+        return JsonResponse({"status": "pending"}, status=200)
+
+    except stripe.error.StripeError as e:
+        return JsonResponse({"error": str(e)}, status=500)
