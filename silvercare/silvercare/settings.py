@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'cart',
     'emailApp',
     'payments',
+    'search'
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -198,8 +199,8 @@ DATABASES = {
         'PASSWORD': env('DATABASE_PASSWORD'),  
         'HOST': 'localhost',  
         'PORT': '3306',  
-        'OPTIONS': {  
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"  
+       'OPTIONS': {  
+           'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"  
         }  
     }
 }
