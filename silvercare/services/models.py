@@ -15,6 +15,7 @@ class Service(models.Model):
     rating = models.FloatField(default=0.0)
     category = models.CharField(max_length=100)
     organiser = models.CharField(max_length=100)
+    semantic_field = models.CharField(max_length=100, null=True)
 
     def __str__(self):
         serialized_obj = {
