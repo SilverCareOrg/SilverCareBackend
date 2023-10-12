@@ -15,6 +15,20 @@ class Service(models.Model):
     rating = models.FloatField(default=0.0)
     category = models.CharField(max_length=100)
     organiser = models.CharField(max_length=100)
+    # cutom_data ={ 'options' : [
+    #                              {
+    #                                 'location' : 
+    #                                 'duration' : 
+    #                                 'price'    :
+    #                                 'nr_available_spots' : 
+    #                                 'rating' :
+
+    #                             }
+    # ],
+
+    
+    # }
+    
 
     def __str__(self):
         serialized_obj = {
@@ -24,7 +38,8 @@ class Service(models.Model):
             "image": self.image,
             "rating": self.rating,
             "category": self.category,
-            "organiser": self.organiser       
+            "organiser": self.organiser    
+               
         }
         
         return JsonResponse(serialized_obj, safe = False)    
@@ -38,6 +53,7 @@ class PurchasedService(models.Model):
     phone_number = models.CharField(max_length=100)
     companion = models.CharField(max_length=100, null = True)
     email = models.CharField(max_length=100)
+    payment = models.ForeignKey('payments.Payment', on_delete = models.SET_NULL, null = True)
 
 class CartService(models.Model):
     cart = models.ForeignKey('cart.Cart', on_delete=models.SET_NULL, null = True)
