@@ -16,12 +16,31 @@ from .models import Payment, Checkout, TemporaryGuestMetadata
 from django.contrib.auth.models import User
 import time
 from emailApp.views import checkout_send_email, guest_checkout_send_email
+from services.models import PurchasedService
 
 env = environ.Env()
 environ.Env.read_env()
 
 stripe.api_key = env('STRIPE_SECRET_KEY')
 BASE_URL=env('BASE_URL')
+
+def checkout_cart(user, payment_obj):
+    cart = user.cart
+    cart_services = cart.cart_services.all()
+    
+    for cart_service in cart_services:
+        purchased_service = PurchasedService.objects.create(user=user,
+                                                            base_service=cart_service.base_service,
+                                                            senior_name=cart_service.senior_name,
+                                                            adult_name=cart_service.adult_name,
+                                                            phone_number=cart_service.phone_number,
+                                                            companion=cart_service.companion,
+                                                            email=cart_service.email,
+                                                            payment = payment_obj )
+        purchased_service.save()
+    
+    cart.cart_services.all().delete()
+    
 
 @api_view(['POST'])
 def create_checkout_session(request):
@@ -73,7 +92,7 @@ def create_checkout_session(request):
         )
     except Exception as e:
         return HttpResponse("Error creating checkout session: " + str(e), status = 500)
-
+    
     return JsonResponse({"id":checkout_session.id}, status=200)
 
 def match_checkout_payment(payment_obj, checkout_obj):
@@ -92,6 +111,7 @@ def match_checkout_payment(payment_obj, checkout_obj):
         payment_obj.user = user
         
         checkout_send_email(user, checkout_obj.checkout_email)
+        checkout_cart(user, payment_obj)
 
     payment_obj.save()
 

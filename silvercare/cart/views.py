@@ -87,22 +87,4 @@ def get_cart(request):
     
     return JsonResponse(cart_services_json, safe = False, status = 200)
 
-@api_view(["POST"])
-def checkout_cart(request):
-    user = get_user_from_token_request(request)
-    cart = user.cart
-    cart_services = cart.cart_services.all()
-    
-    for cart_service in cart_services:
-        purchased_service = PurchasedService.objects.create(user=user,
-                                                            base_service=cart_service.base_service,
-                                                            senior_name=cart_service.senior_name,
-                                                            adult_name=cart_service.adult_name,
-                                                            phone_number=cart_service.phone_number,
-                                                            companion=cart_service.companion,
-                                                            email=cart_service.email)
-        purchased_service.save()
-    
-    cart.cart_services.all().delete()
-    
-    return JsonResponse("Checkout successful!", status = 200)
+
