@@ -74,7 +74,7 @@ jobs:
           cd silvercare
           python3 -m pip install --upgrade pip
           pip3 install -r requirements.txt
-          python3 manage.py makemigrations
+          python3 manage.py makemigrations --merge
           python3 manage.py migrate
           screen -X -S backend quit || true
           screen -dmS backend python3 manage.py runserver
