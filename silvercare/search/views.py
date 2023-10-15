@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse
 from django.db import connection
 from . import views
 from django.urls import path, reverse
@@ -12,12 +12,17 @@ from django.utils import timezone
 import Levenshtein
 from search.semantic_fields import fields
 from search.correct_words import correct_words, seplist
+import json
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
 
-
+@api_view(['POST'])
 def search_ex(request):
-    if 'searched' in request.POST:
+     data = json.loads(request.body)
+
+     if 'searched' in data.keys():
         services = Service.objects.none()
-        searched = str(request.POST['searched'])
+        searched = str(data["searched"])
         for word in searched.split(" "):
               if word not in seplist:
                     wordd = word[:] 
@@ -43,15 +48,13 @@ def search_ex(request):
                               services3 = Service.objects.filter(semantic_field__contains = x)
                               services |= services3 
 
-        return render(request, 
-                       'search/search-ex.html',
-                        {'searched':searched,
-                         'services':services}
-                )
-    else:
-        return render(request, 
-                    'search/search-ex.html',
-                    {}
-        )
+        return JsonResponse({
+               'services': [{"service_id": service.id, "service_name": service.name} for service in services]
+        }, status = 200)
+   
+     else:
+        return JsonResponse({
+               'error': "No input given"
+        }, status = 400)
          
 

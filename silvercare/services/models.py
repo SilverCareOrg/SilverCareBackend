@@ -29,6 +29,8 @@ class Service(models.Model):
     
     # }
     
+    semantic_field = models.CharField(max_length=100, null=True)
+
 
     def __str__(self):
         serialized_obj = {

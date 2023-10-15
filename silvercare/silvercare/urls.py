@@ -33,4 +33,6 @@ urlpatterns = [
     path('', include('payments.urls')),
     path('search/', include('search.urls')),
     path('', include('servicehandlers.urls'))
+    path('', include("search.urls"))
+
 ]
