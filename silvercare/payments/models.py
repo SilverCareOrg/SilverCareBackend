@@ -10,13 +10,11 @@ class Payment(models.Model):
     idempotency_request_id = models.CharField(max_length=255, null=True)
     idempotency_key = models.CharField(max_length=255, null=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    
+
 class Checkout(models.Model):
     payment_intent_id = models.CharField(max_length=255)
     metadata = models.CharField(max_length=1000)
     checkout_email = models.CharField(max_length=255, null=True)
-    
+
 class TemporaryGuestMetadata(models.Model):
     metadata = models.CharField(max_length=3000)
-
-
