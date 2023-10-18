@@ -48,12 +48,27 @@ def set_staff(request):
         if not user.is_staff: 
             return Response({'message': 'You are not authorized to set staff'}, status=403)
         staff_email = request.GET.get('staff_email', '')
-        users = User.objects.filter(email__contains = staff_email)
-        users.is_staff = True
+        users = User.objects.filter(email__contains = staff_email).first()
+        users.is_staff= True
+        users.save()
         return Response({'message':'Staff set successfully'})
     except Exception as e:
         return Response({'message': 'An error occurred.'}, status=500)
-        
+    
+
+@api_view(['POST'])
+def unset_staff(request):
+    try:
+        user = get_user_from_token_request(request) 
+        if not user.is_staff: 
+            return Response({'message': 'You are not authorized to set staff'}, status=403)
+        staff_email = request.GET.get('staff_email', '')
+        users = User.objects.filter(email__contains = staff_email).first()
+        users.is_staff = False
+        users.save()
+        return Response({'message':'Staff unset successfully'})
+    except Exception as e:
+        return Response({'message': 'An error occurred.'}, status=500)
     
 
 
