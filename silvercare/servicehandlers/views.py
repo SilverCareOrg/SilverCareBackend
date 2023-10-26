@@ -9,13 +9,27 @@ from rest_framework.decorators import api_view
 
 @api_view(['GET'])
 def get_services(request):
-    inf_lim = request.GET.get('inf_lim', 0) #default inf_lim = 0
-    sup_lim = request.GET.get('sup_lim', 20) #default sup_lim = 20
+    inf_lim = int(request.GET.get('inf_lim', 0)) #default inf_lim = 0
+    sup_lim = int(request.GET.get('sup_lim', 20)) #default sup_lim = 20
+    category = request.GET.get('category', 'nothing') #default category = nothing
+    location = request.GET.get('location', 'nothing') #default location = nothing
+    sort = request.GET.get('sort', 'nothing') #default sort = nothing; you can sort by 'views', 'ascending', 'descending'
     if inf_lim > sup_lim:
          inf_lim, sup_lim = sup_lim, inf_lim
-    services = Service.objects.filter(pk__gte=inf_lim, pk__lte=sup_lim)
+    services = Service.objects
+    if category != 'nothing':
+        services = services.filter(category__contains = category)
+    if location != 'nothing':
+        services = services.filter(location__contains = location)
     data = list(services.values())
-    return JsonResponse(data, safe = False)
+    if sort == 'ascending':
+         data = sorted(data, key=lambda x: x['price'])
+    if sort == 'descending':
+         data = sorted(data, key=lambda x: x['price'], reverse=True)
+    fdata=[]
+    for i in range(inf_lim, sup_lim+1):
+        fdata.append(data[i])
+    return JsonResponse(fdata, safe = False)
 
 
 @api_view(['GET'])
