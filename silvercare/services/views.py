@@ -55,8 +55,14 @@ class CreateServiceView(APIView):
         service_common_location = True if data.get('common_location') == "true" else False
         service_category = data.get('category')
         service_iban = data.get('iban')
+        service_organiser = data.get('organiser')
         
         options = data.get("options")
+        options = json.loads(options)
+        
+        if len(options) == 0:
+            return Response({'message': 'You need to add at least one option'}, status=400)
+        
         sections = data.get("sections")
         
         file = request.FILES.get('image')
@@ -74,6 +80,7 @@ class CreateServiceView(APIView):
         f.close()
         
         service_obj = Service.objects.create(name = service_name,
+                                            organiser = service_organiser,
                                             raw_name = service_raw_name,
                                             description = service_description,
                                             options_common_city = service_options_common_city,
@@ -102,8 +109,6 @@ class CreateServiceView(APIView):
                 map_location_obj = MapLocation.objects.create(latitude = latitude,
                                                                 longitude = longitude)
                 service_obj.map_location = map_location_obj
-        
-        options = json.loads(options)
         
         for option in options:
             option_name = option.get("name")
@@ -153,23 +158,44 @@ class CreateServiceView(APIView):
 def get_services_helper(services):
     res = []
     bef = []
-    
+
     for service in services:
         serialized_service = {
             "name": service.name,
             "category": service.category.capitalize(),
-            "price": service.price,
             "description": service.description,
-            "rating": str(service.rating),
-            "img_path": service.image,
+            "img_path": service.image + "." + service.image_type,
             "img_type": service.image_type,
             "organiser": service.organiser,
-            "service_id": service.id
+            "service_id": service.id,
+            "options_common_city": service.options_common_city,
+            "common_location": service.common_location,
+            "city": service.city,
+            "county": service.county,
+            "location": service.location,
+            "map_location": service.map_location.serialize() if service.map_location else None,
+            "options": [
+                {
+                    "name": option.name,
+                    "price": option.price,
+                    "duration": option.duration,
+                    "date": option.date,
+                    "location": option.location,
+                    "map_location": option.map_location.serialize() if option.map_location else None,
+                    "rating": option.rating,
+                    "number_ratings": option.number_ratings,
+                    "details": option.details,
+                    "city": option.city,
+                    "county": option.county,
+                    "option_id": option.id
+                }
+                for option in ServiceOption.objects.filter(service = service)],
+            "sections": json.loads(service.extra_details),
         }
 
         res.append(serialized_service)
-        bef.append(service.image)
-        
+        bef.append(service.image + "." + service.image_type)
+
     return res, bef
 
 @api_view(["GET"])
@@ -182,7 +208,7 @@ def get_all_services(request):
         img_to_add = list(set(bef).difference(set(fef)))
         for img in img_to_add:
             content_to_write = ""
-            print(img)
+
             with open(BASE_IMG_PATH + img, "rb") as image_file:
                 content_to_write = image_file.read()
             

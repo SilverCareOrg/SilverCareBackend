@@ -12,6 +12,10 @@ class MapLocation(models.Model):
     latitude = models.FloatField(default=0)
     longitude = models.FloatField(default=0)
 
+    # Returns a json object with the latitude and longitude
+    def serialize(self):
+        return [self.latitude, self.longitude]
+
 class ServiceOption(models.Model):
     name = models.CharField(max_length=100)
     price = models.FloatField(default=0)
