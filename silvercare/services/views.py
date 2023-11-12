@@ -19,12 +19,13 @@ import environ
 from unidecode import unidecode
 import uuid
 from datetime import datetime
+from django.utils import timezone
 
 env = environ.Env()
 environ.Env.read_env()
 
 BASE_IMG_PATH = "./services/images/"
-PATH_TO_FIMG = env("PATH_TO_FIMG")
+PATH_TO_FIMG = env("SILVERCARE_PATH_TO_FIMG")
 
 class ServiceSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
@@ -46,7 +47,7 @@ class CreateServiceView(APIView):
         
         if not user.is_staff:
             return Response({'message': 'You are not authorized to add services'}, status=400)
-
+        
         data = request.data
         service_name = data.get('name')
         service_raw_name = unidecode(service_name)
@@ -64,6 +65,7 @@ class CreateServiceView(APIView):
             return Response({'message': 'You need to add at least one option'}, status=400)
         
         sections = data.get("sections")
+        sections = json.dumps(json.loads(sections)["sections"])
         
         file = request.FILES.get('image')
         image_type = str(file).split('.')[-1]
@@ -114,7 +116,6 @@ class CreateServiceView(APIView):
             option_name = option.get("name")
             option_price = option.get("price")
             option_duration = parse_duration(option.get("duration"))
-            option_date = option.get("date")
             option_location = option.get("location")
             option_map_location = option.get("map_location")
             option_details = option.get("details")
@@ -135,7 +136,7 @@ class CreateServiceView(APIView):
                 option_date = option.get("date_time")
                 
                 if option_date != "":
-                    option_date = datetime.strptime(option_date, "%Y-%m-%dT%H:%M").date()
+                    option_date = datetime.strptime(option.get("date_time"), "%Y-%m-%dT%H:%M")
                     option_obj.date = option_date
             except:
                 pass
@@ -162,6 +163,7 @@ def get_services_helper(services):
     for service in services:
         serialized_service = {
             "name": service.name,
+            "id": service.id,
             "category": service.category.capitalize(),
             "description": service.description,
             "img_path": service.image + "." + service.image_type,
@@ -187,7 +189,7 @@ def get_services_helper(services):
                     "details": option.details,
                     "city": option.city,
                     "county": option.county,
-                    "option_id": option.id
+                    "id": option.id
                 }
                 for option in ServiceOption.objects.filter(service = service)],
             "sections": json.loads(service.extra_details),

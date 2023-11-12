@@ -30,14 +30,14 @@ environ.Env.read_env()
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = env('SILVERCARE_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['*', 'www.thesilvercare.com']
 
-
+print(env("DATABASE_NAME"))
 # Application definition
 
 INSTALLED_APPS = [
@@ -63,11 +63,11 @@ INSTALLED_APPS = [
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'#env('EMAIL_HOST')  # or use Gmail's SMTP server: 'smtp.gmail.com'
-EMAIL_PORT = 587#env('EMAIL_PORT')  # Replace with the appropriate port number
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
+EMAIL_HOST = 'smtp.gmail.com'#env('SILVERCARE_EMAIL_HOST')  # or use Gmail's SMTP server: 'smtp.gmail.com'
+EMAIL_PORT = 587#env('SILVERCARE_EMAIL_PORT')  # Replace with the appropriate port number
+EMAIL_HOST_USER = env('SILVERCARE_EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('SILVERCARE_EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env('SILVERCARE_EMAIL_HOST_USER')
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 SESSION_COOKIE_SECURE = True
@@ -197,9 +197,9 @@ WSGI_APPLICATION = 'silvercare.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': env('DATABASE_NAME'),
-        'USER': env('DATABASE_USER'),  
-        'PASSWORD': env('DATABASE_PASSWORD'),  
+        'NAME': env('SILVERCARE_DATABASE_NAME'),
+        'USER': env('SILVERCARE_DATABASE_USER'),  
+        'PASSWORD': env('SILVERCARE_DATABASE_PASSWORD'),  
         'HOST': 'localhost',  
         'PORT': '3306',  
        'OPTIONS': {  
@@ -238,7 +238,7 @@ TIME_ZONE = 'Europe/Bucharest'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
