@@ -37,7 +37,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*', 'www.thesilvercare.com']
 
-print(env("DATABASE_NAME"))
 # Application definition
 
 INSTALLED_APPS = [
