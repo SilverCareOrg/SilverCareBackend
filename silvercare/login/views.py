@@ -20,7 +20,6 @@ from django.utils.dateparse import parse_datetime
 def handle_bad_login_request(request):
 	login_attempts = request.session.get('login_attempts', 0)
 	cooldown = request.session.get('cooldown', None)
-	print(login_attempts, cooldown, timezone.now())
 
 	request.session['login_attempts'] = login_attempts + 1
 
@@ -53,9 +52,10 @@ def login(request):
 
 		shadow_user = User.objects.get(email=email)
 		user = authenticate(request, username=shadow_user.username, password=password)
+		print(user)
 		token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
 		
-		if user is not None or not token:
+		if user is not None and not token:
 			user = shadow_user if user is None else user
       
 			token = generate_jwt_token(user, email)
