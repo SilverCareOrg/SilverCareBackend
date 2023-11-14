@@ -21,8 +21,8 @@ from services.models import PurchasedService
 env = environ.Env()
 environ.Env.read_env()
 
-stripe.api_key = env('STRIPE_SECRET_KEY')
-BASE_URL=env('BASE_URL')
+stripe.api_key = env('SILVERCARE_STRIPE_SECRET_KEY')
+BASE_URL=env('SILVERCARE_BASE_URL')
 
 def checkout_cart(user, payment_obj):
     cart = user.cart
@@ -119,7 +119,7 @@ def match_checkout_payment(payment_obj, checkout_obj):
 def stripe_webhook(request):
     payload = json.loads(request.body.decode('utf-8'))
 
-    secret_key = env('STRIPE_WEBHOOK_KEY')
+    secret_key = env('SILVERCARE_STRIPE_WEBHOOK_KEY')
 
     try:
         event = stripe.Event.construct_from(

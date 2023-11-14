@@ -20,7 +20,9 @@ class ServiceOption(models.Model):
     name = models.CharField(max_length=100)
     price = models.FloatField(default=0)
     duration = models.DurationField(null = True)
-    date = models.DateField(null = True)
+    
+    # Store day, month, year, hour, minute
+    date = models.DateTimeField(null = True)
     location = models.CharField(max_length=100, null = True)
     map_location = models.OneToOneField(MapLocation, on_delete=models.SET_NULL, null=True)
     rating = models.FloatField(default=0)
@@ -73,10 +75,6 @@ class PurchasedService(models.Model):
 class CartService(models.Model):
     cart = models.ForeignKey('cart.Cart', on_delete=models.SET_NULL, null = True)
     base_service = models.ForeignKey(Service, on_delete=models.SET_NULL, null = True)
-
-    senior_name = models.CharField(max_length=100)
-    adult_name = models.CharField(max_length=100, null = True)
-    phone_number = models.CharField(max_length=100)
-    companion = models.CharField(max_length=100, null = True)
-    email = models.CharField(max_length=100)
-        
+    option = models.ForeignKey(ServiceOption, on_delete=models.SET_NULL, null = True)
+    number_of_participants = models.IntegerField(default=1)
+    price = models.FloatField(default=0)

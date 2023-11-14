@@ -12,11 +12,12 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 import os
 from .models import Cart
-from services.models import CartService, Service, PurchasedService
+from services.models import CartService, Service, PurchasedService, ServiceOption
 
 @api_view(["POST"])
 def add_to_cart(request):
     user = get_user_from_token_request(request)
+
     # Check if user cart has been created in the database
     if user.cart is None:
         cart = Cart.objects.create(user=user)
@@ -26,23 +27,23 @@ def add_to_cart(request):
 
     # Get the service to be added to cart
     base_service = Service.objects.get(id=data['service_id'])
-    
-    if user.cart.cartservice_set.all().filter(base_service=base_service).exists():
-        return JsonResponse("Object already added to cart!", safe = False, status = 200)
+
+    # Get the option to be added to cart
+    option = ServiceOption.objects.get(id=data['option_id'])
+
+    # Get the number of participants
+    number_of_participants = data['number_of_participants']
 
     cart_service = CartService.objects.create(cart=user.cart,
                                               base_service=base_service,
-                                              senior_name=data['senior_name'],
-                                              adult_name=data['adult_name'],
-                                              phone_number=data['phone_number'],
-                                              companion=data['companion'],
-                                              email=data['email'])
+                                              option=option,
+                                              number_of_participants=number_of_participants)
 
     user.cart.save()
     base_service.save()
     cart_service.save()
+    option.save()
     user.save()
-    print(cart_service)
     return JsonResponse("Added to cart successfully!", safe = False, status = 200)
 
 def serialize_cart_services(cart_services):
@@ -50,15 +51,26 @@ def serialize_cart_services(cart_services):
     
     for cart_service in cart_services:
         cart_services_json.append({
+            "base_service_id": cart_service.base_service.id,
             "service_id": cart_service.id,
             "service_name": cart_service.base_service.name,
-            "service_price": cart_service.base_service.price,
-            "service_image_path": cart_service.base_service.image,
-            "senior_name": cart_service.senior_name,
-            "adult_name": cart_service.adult_name,
-            "phone_number": cart_service.phone_number,
-            "companion": cart_service.companion,
-            "email": cart_service.email
+            "option_name": cart_service.option.name,
+            "option_details": {
+                    "price": cart_service.option.price,
+                    "duration": cart_service.option.duration,
+                    "date": cart_service.option.date,
+                    "location": cart_service.option.location,
+                    "map_location": cart_service.option.map_location.serialize() if cart_service.option.map_location else None,
+                    "rating": cart_service.option.rating,
+                    "number_ratings": cart_service.option.number_ratings,
+                    "details": cart_service.option.details,
+                    "city": cart_service.option.city,
+                    "county": cart_service.option.county,
+                    "id": cart_service.option.id
+                },
+            "price": cart_service.option.price * cart_service.number_of_participants,
+            "number_of_participants": cart_service.number_of_participants,
+            "service_image_path": cart_service.base_service.image + "." + cart_service.base_service.image_type,
         })
         
     return cart_services_json
@@ -77,7 +89,6 @@ def remove_from_cart(request):
     return JsonResponse(cart_services_json, safe = False, status = 200)    
     
     
-
 @api_view(["GET"])
 def get_cart(request):
     user = get_user_from_token_request(request)
