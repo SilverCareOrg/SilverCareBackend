@@ -32,8 +32,8 @@ def sort_filter(services, type):
 @api_view(['GET'])
 def get_services(request):
     searched = request.GET.get('searched', '') # default searched = ''
-    inf_lim = int(request.GET.get('inf_lim', 0)) # default inf_lim = 0
-    sup_lim = int(request.GET.get('sup_lim', 20)) # default sup_lim = 20
+    inf_lim = int(request.GET.get('inf_limit', 0)) # default inf_lim = 0
+    sup_lim = int(request.GET.get('sup_limit', 20)) # default sup_lim = 20
     category = request.GET.get('category', '') # default category = ''
     location = request.GET.get('location', '') # default location = ''
     sort = request.GET.get('sort', '') # default sort = ''; you can sort by 'views', 'ascending', 'descending'
@@ -57,8 +57,9 @@ def get_services(request):
     if sort is not None and sort == 'descending':
         services = sort_filter(services, 'descending')
 
+    total = len(services)
     services, _ = get_services_helper(services[inf_lim:sup_lim])
-    return JsonResponse(services, safe = False, status=200)
+    return JsonResponse({"services":services, "total":total}, safe = False, status=200)
 
 
 @api_view(['GET'])
