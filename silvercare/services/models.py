@@ -23,13 +23,13 @@ class ServiceOption(models.Model):
     
     # Store day, month, year, hour, minute
     date = models.DateTimeField(null = True)
-    location = models.CharField(max_length=100, null = True)
+    location = models.CharField(default="",max_length=100, null = True)
     map_location = models.OneToOneField(MapLocation, on_delete=models.SET_NULL, null=True)
     rating = models.FloatField(default=0)
     number_ratings = models.IntegerField(default=0)
     details = models.CharField(max_length=3000, null = True)
-    city = models.CharField(max_length=100, null = True)
-    county = models.CharField(max_length=100, null = True)
+    city = models.CharField(default="",max_length=100, null = True)
+    county = models.CharField(default="",max_length=100, null = True)
 
     service = models.ForeignKey('Service', on_delete=models.SET_NULL, null=True)
 
@@ -48,11 +48,11 @@ class Service(models.Model):
     has_more_options = models.BooleanField(default=False)
     options_common_city = models.BooleanField(default=False)
     common_location = models.BooleanField(default=False)
-    location = models.CharField(max_length=100, null = True)
+    location = models.CharField(default="", max_length=100, null = True)
     map_location = models.OneToOneField(MapLocation, on_delete=models.SET_NULL, null=True)
     semantic_field = models.CharField(max_length=100, null=True)
-    city = models.CharField(max_length=100, null = True)
-    county = models.CharField(max_length=100, null = True)
+    city = models.CharField(default="", max_length=100, null = True)
+    county = models.CharField(default="", max_length=100, null = True)
     
     # payment information
     iban = models.CharField(max_length=100, null = True)
