@@ -19,7 +19,7 @@ class MapLocation(models.Model):
 class ServiceOption(models.Model):
     name = models.CharField(max_length=100)
     price = models.FloatField(default=0)
-    duration = models.DurationField(null = True)
+    duration = models.CharField(max_length=20, null = True)
     
     # Store day, month, year, hour, minute
     date = models.DateTimeField(null = True)
