@@ -20,6 +20,9 @@ from unidecode import unidecode
 import uuid
 from datetime import datetime
 from django.utils import timezone
+import re
+
+duration_pattern = re.compile(r'(?:(?P<days>\d+)d\s*)?(?:(?P<hours>\d+)h\s*)?(?:(?P<minutes>\d+)m)?')
 
 env = environ.Env()
 environ.Env.read_env()
@@ -115,7 +118,7 @@ class CreateServiceView(APIView):
         for option in options:
             option_name = option.get("name")
             option_price = option.get("price")
-            option_duration = parse_duration(option.get("duration"))
+            option_duration = option.get("duration")
             option_location = option.get("location")
             option_map_location = option.get("map_location")
             option_details = option.get("details")
