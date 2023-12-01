@@ -15,46 +15,40 @@ from search.correct_words import correct_words, seplist
 import json
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
+from services.views import get_services_helper
+import threading
+import json
+from pysolr import Solr
+
+
+def search_helper(searched):
+	services = Service.objects.none()
+	services = []
+	conn = Solr('http://localhost:8983/solr/new_core', always_commit = True)
+	for word in searched.split(" "):
+		results = conn.search(f'name:{word}', **{
+    						  'qt': 'spell',  
+    						  'spellcheck': 'true',  
+    						  'spellcheck.collate': 'true'  
+							 })
+		for result in results:
+			services += str(result)
+	return services
+ 
 
 @api_view(['POST'])
 def search_ex(request):
-     data = json.loads(request.body)
-
-     if 'searched' in data.keys():
-        services = Service.objects.none()
-        searched = str(data["searched"])
-        for word in searched.split(" "):
-              if word not in seplist:
-                    wordd = word[:] 
-                    newword = min(correct_words, key=lambda x: Levenshtein.distance(word, x))
-                    wordlower = newword[0].lower() + newword[1:]
-                    wordupper = newword[0].upper() + newword[1:]
-                    services1 = Service.objects.filter(name__contains = wordlower)
-                    services2 = Service.objects.filter(name__contains = wordupper)
-                    services |= services1 
-                    services |= services2
-                    for x in fields:
-                         if wordlower in fields[x]:
-                              services3 = Service.objects.filter(semantic_field__contains = x)
-                              services |= services3 
-                    wordlower = wordd[0].lower() + wordd[1:]
-                    wordupper = wordd[0].upper() + wordd[1:]
-                    services1 = Service.objects.filter(name__contains = wordlower)
-                    services2 = Service.objects.filter(name__contains = wordupper)
-                    services |= services1 
-                    services |= services2
-                    for x in fields:
-                         if wordlower in fields[x]:
-                              services3 = Service.objects.filter(semantic_field__contains = x)
-                              services |= services3 
-
-        return JsonResponse({
-               'services': [{"service_id": service.id, "service_name": service.name} for service in services]
-        }, status = 200)
+	data = json.loads(request.body)
+	print(data)
+	if 'searched' in data.keys():
+		services = threading.Thread(target = search_helper, args = data['searched'], daemon = True)
+		services.start()
+		res, _ = get_services_helper(services)
+		return JsonResponse(res, safe=False, status = 200)
    
-     else:
-        return JsonResponse({
-               'error': "No input given"
-        }, status = 400)
-         
+	else:
+	   return JsonResponse({
+			'error': "No input given"
+	   }, status = 400)
+	    
 
