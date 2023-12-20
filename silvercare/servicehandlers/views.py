@@ -67,7 +67,7 @@ def get_service_by_id(request):
     id = request.GET.get('id', "")
     service = Service.objects.filter(id = id)
     service = get_services_helper(service)
-    return JsonResponse(service, safe = False)
+    return JsonResponse({'service': service}, safe = False, status = 200)
 
 @api_view(['GET'])
 def get_services_by_organiser(request):
