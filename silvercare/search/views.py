@@ -18,37 +18,32 @@ from rest_framework.decorators import api_view
 from services.views import get_services_helper
 import threading
 import json
+import queue
 from pysolr import Solr
-
 
 def search_helper(searched):
 	services = Service.objects.none()
 	services = []
 	conn = Solr('http://localhost:8983/solr/new_core', always_commit = True)
 	for word in searched.split(" "):
-		results = conn.search(f'name:{word}', **{
-    						  'qt': 'spell',  
-    						  'spellcheck': 'true',  
-    						  'spellcheck.collate': 'true'  
+		results = conn.search(f'name:{word}',**{
+    						  'qt':'spell',  
+    						  'spellcheck':'true',  
+    						  'spellcheck.collate':'true'  
 							 })
 		for result in results:
-			services += str(result)
+			services.append(result)
 	return services
  
 
-@api_view(['POST'])
-def search_ex(request):
-	data = json.loads(request.body)
-	print(data)
-	if 'searched' in data.keys():
-		services = threading.Thread(target = search_helper, args = data['searched'], daemon = True)
-		services.start()
-		res, _ = get_services_helper(services)
-		return JsonResponse(res, safe=False, status = 200)
-   
-	else:
-	   return JsonResponse({
-			'error': "No input given"
-	   }, status = 400)
-	    
-
+@api_view(['GET'])
+def search(request):
+    searched = request.GET.get('searched', '')
+    q = queue.Queue()
+    def wrapper():
+        q.put(search_helper(searched))
+    t = threading.Thread(target=wrapper)
+    t.start()
+    t.join()
+    services = q.get()
+    return JsonResponse(services, safe=False, status=200)

@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime
 from django.utils import timezone
 import re
-from management import delete_service_solr, add_service_solr
+from services.utils import delete_service_solr, add_service_solr, add_everything_solr
 
 duration_pattern = re.compile(r'(?:(?P<days>\d+)d\s*)?(?:(?P<hours>\d+)h\s*)?(?:(?P<minutes>\d+)m)?')
 
@@ -244,9 +244,13 @@ def get_homepage_best_selling_products(request):
 
     return JsonResponse(res, safe = False)
 
-@api_view(["DELETE"])
-def delete_service(request):
-    id = request.GET.get('id','')
-    delete_service_solr(id)
+# @api_view(["DELETE"])
+# def delete_service(request):
+#     id = request.GET.get('id','')
+#     delete_service_solr(id)
     # We need to implement the delete_service for database
-    
+
+@api_view(["POST"])
+def add_to_solr(request):
+    add_everything_solr()
+    return JsonResponse("Database loaded", safe = False)

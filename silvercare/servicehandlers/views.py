@@ -1,36 +1,73 @@
 from django.shortcuts import render
 
 # Create your views here.
-from services.models import Service
+from services.models import Service, ServiceOption
 from django.http import JsonResponse
 from rest_framework.response import Response
 from login.utils import get_user_from_token_request
 from rest_framework.decorators import api_view
+from services.views import get_services_helper
+from search.views import search_helper
+from services.utils import delete_service_solr,add_service_solr
+
+def location_filter(services, location):
+    print(location)
+    return [service for service in services\
+        if location in (("" if service.location is None else service.location) +\
+            ("" if service.city is None else service.city)\
+            + ("" if service.county is None else service.county)) or\
+        len([option for option in ServiceOption.objects.filter(service = service)\
+            if location in (("" if option.location is None else option.location) +\
+            ("" if option.city is None else option.city)\
+            + ("" if option.county is None else option.county))]) > 0]
+
+def sort_filter(services, type):
+    sort_key_function = lambda x: min([option.price for option in ServiceOption.objects.filter(service = x)])
+    
+    if type == 'ascending':
+        return sorted(services, key=sort_key_function)
+    if type == 'descending':
+        return sorted(services, key=sort_key_function, reverse=True)
+    return services
 
 @api_view(['GET'])
 def get_services(request):
-    inf_lim = int(request.GET.get('inf_lim', 0)) #default inf_lim = 0
-    sup_lim = int(request.GET.get('sup_lim', 20)) #default sup_lim = 20
-    category = request.GET.get('category', 'nothing') #default category = nothing
-    location = request.GET.get('location', 'nothing') #default location = nothing
-    sort = request.GET.get('sort', 'nothing') #default sort = nothing; you can sort by 'views', 'ascending', 'descending'
-    if inf_lim > sup_lim:
-         inf_lim, sup_lim = sup_lim, inf_lim
-    services = Service.objects
-    if category != 'nothing':
-        services = services.filter(category__contains = category)
-    if location != 'nothing':
-        services = services.filter(location__contains = location)
-    data = list(services.values())
-    if sort == 'ascending':
-         data = sorted(data, key=lambda x: x['price'])
-    if sort == 'descending':
-         data = sorted(data, key=lambda x: x['price'], reverse=True)
-    fdata=[]
-    for i in range(inf_lim, sup_lim+1):
-        fdata.append(data[i])
-    return JsonResponse(fdata, safe = False)
+    searched = request.GET.get('searched', '') # default searched = ''
+    inf_lim = int(request.GET.get('inf_limit', 0)) # default inf_lim = 0
+    sup_lim = int(request.GET.get('sup_limit', 20)) # default sup_lim = 20
+    category = request.GET.get('category', '') # default category = ''
+    location = request.GET.get('location', '') # default location = ''
+    sort = request.GET.get('sort', '') # default sort = ''; you can sort by 'views', 'ascending', 'descending'
 
+    if inf_lim > sup_lim:
+        inf_lim, sup_lim = sup_lim, inf_lim
+
+    # Get all services
+    services = Service.objects.all() if searched == '' else search_helper(searched)
+
+    # Filter by category
+    if category is not None and category != '':
+        services = services.filter(category__contains = category)
+    
+    # Filter by location - main service or options
+    if location is not None and location != '':
+        services = location_filter(services, location)
+    
+    if sort is not None and sort == 'ascending':
+        services = sort_filter(services, 'ascending')
+    if sort is not None and sort == 'descending':
+        services = sort_filter(services, 'descending')
+
+    total = len(services)
+    services, _ = get_services_helper(services[inf_lim:sup_lim])
+    return JsonResponse({"services":services, "total":total}, safe = False, status=200)
+ 
+@api_view(['GET'])
+def get_service_by_id(request):
+    id = request.GET.get('id', "")
+    service = Service.objects.filter(id = id)
+    service = get_services_helper(service)
+    return JsonResponse(service, safe = False)
 
 @api_view(['GET'])
 def get_services_by_organiser(request):
@@ -49,6 +86,7 @@ def delete_service(request):
     service_id = request.GET.get('service_id', 0)
     try:
         service = Service.objects.get(id=service_id)
+        delete_service_solr(service_id)
         service.delete()
         return JsonResponse({'message': 'Service deleted successfully'}, safe = False)
     except Service.DoesNotExist:
