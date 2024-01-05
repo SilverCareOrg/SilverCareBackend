@@ -8,9 +8,9 @@ from login.utils import get_user_from_token_request
 from rest_framework.decorators import api_view
 from services.views import get_services_helper
 from search.views import search_helper
+from services.utils import delete_service_solr, add_service_solr
 
 def location_filter(services, location):
-    print(location)
     return [service for service in services\
         if location in (("" if service.location is None else service.location) +\
             ("" if service.city is None else service.city)\
@@ -60,7 +60,7 @@ def get_services(request):
     total = len(services)
     services, _ = get_services_helper(services[inf_lim:sup_lim])
     return JsonResponse({"services":services, "total":total}, safe = False, status=200)
-
+ 
 @api_view(['GET'])
 def get_service_by_id(request):
     id = request.GET.get('id', "")
@@ -85,6 +85,7 @@ def delete_service(request):
     service_id = request.GET.get('service_id', 0)
     try:
         service = Service.objects.get(id=service_id)
+        delete_service_solr(service_id)
         service.delete()
         return JsonResponse({'message': 'Service deleted successfully'}, safe = False)
     except Service.DoesNotExist:
