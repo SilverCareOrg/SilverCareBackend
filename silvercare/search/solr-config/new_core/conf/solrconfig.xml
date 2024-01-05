@@ -1,0 +1,35 @@
+<config>
+    <luceneMatchVersion>LATEST</luceneMatchVersion>
+    <dataDir>${solr.data.dir:}</dataDir>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
+    <indexConfig>
+        <lockType>${solr.lock.type:native}</lockType>
+    </indexConfig>
+    <jmx />
+    <updateHandler class="solr.DirectUpdateHandler2"/>
+    <query>
+        <maxBooleanClauses>1024</maxBooleanClauses>
+        <filterCache class="solr.FastLRUCache" size="512" initialSize="512" autowarmCount="0"/>
+        <queryResultCache class="solr.LRUCache" size="512" initialSize="512" autowarmCount="0"/>
+        <documentCache class="solr.LRUCache" size="512" initialSize="512" autowarmCount="0"/>
+        <enableLazyFieldLoading>true</enableLazyFieldLoading>
+        <queryResultWindowSize>20</queryResultWindowSize>
+        <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
+        <listener event="newSearcher" class="solr.QuerySenderListener">
+            <arr name="queries"/>
+        </listener>
+        <listener event="firstSearcher" class="solr.QuerySenderListener">
+            <arr name="queries"/>
+        </listener>
+    </query>
+    <requestDispatcher handleSelect="false" >
+        <requestParsers enableRemoteStreaming="false" multipartUploadLimitInKB="2048" formdataUploadLimitInKB="2048" />
+        <httpCaching never304="true" />
+    </requestDispatcher>
+    <requestHandler name="/select" class="solr.SearchHandler" default="true">
+        <lst name="defaults">
+            <str name="echoParams">explicit</str>
+            <int name="rows">10</int>
+        </lst>
+    </requestHandler>
+</config>

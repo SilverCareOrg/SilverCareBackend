@@ -1,0 +1,50 @@
+<schema name="myconfig" version="1.5">
+<types>
+    <fieldType name="string" class="solr.StrField" />
+</types>
+<fields>
+    <field name="id" type="string" indexed="true" stored="true"/>
+    <field name="name" type="text_ro" indexed="true" stored="true"/>
+    <field name="organiser" type="string" indexed="true" stored="true"/>
+</fields>
+
+    <fieldType name="text_ro" class="solr.TextField" positionIncrementGap="100">
+        <analyzer>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_ro.txt" />
+            <filter class="solr.SnowballPorterFilterFactory" language="Romanian"/>
+        </analyzer>
+    </fieldType>
+
+<searchComponent name="spellcheck" class="solr.SpellCheckComponent">
+    <str name="queryAnalyzerFieldType">text_ro</str>
+    <lst name="spellchecker">
+        <str name="name">default</str>
+        <str name="field">text_ro</str>  
+        <str name="classname">solr.IndexBasedSpellChecker</str>
+        <str name="spellcheckIndexDir">./spellchecker</str>
+        <str name="buildOnCommit">true</str>
+        <float name="accuracy">0.3</float> 
+    </lst>
+</searchComponent>
+
+<requestHandler name="/spell" class="solr.SearchHandler" startup="lazy">
+    <lst name="defaults">
+        <str name="df">name</str>
+        <str name="spellcheck.dictionary">default</str>
+        <str name="spellcheck">on</str>
+        <str name="spellcheck.extendedResults">true</str>
+        <str name="spellcheck.count">5</str>
+        <str name="spellcheck.alternativeTermCount">5</str>
+        <str name="spellcheck.maxResultsForSuggest">5</str>
+        <str name="spellcheck.collate">true</str>
+        <str name="spellcheck.collateExtendedResults">true</str>
+        <str name="spellcheck.maxCollationTries">5</str>
+        <str name="spellcheck.maxCollations">3</str>
+    </lst>
+    <arr name="last-components">
+        <str>spellcheck</str>
+    </arr>
+</requestHandler>
+</schema>
