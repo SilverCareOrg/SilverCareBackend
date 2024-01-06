@@ -51,13 +51,13 @@ def transfer_cart_to_purchase(cart_services, user):
     cart_services.delete()
     user.save()
 
-def send_db_user_email_message(cart_services, user, user_email):
+def send_db_user_email_message(cart_services, user, user_email, metadata):
     introduction = ""
     SC_introduction = f"<h2>Email client: {user.email}<h2>"
     with open('./emailApp/components/introduction.txt', 'r', encoding='utf-8') as f:
         introduction = f.read()
         introduction = introduction.replace("[Nume Client]", user.username)
-        introduction = introduction.replace("[Număr Comandă]",generate_command_number())
+        introduction = introduction.replace("[Număr Comandă]", metadata["cmd"])
         introduction = introduction.replace("[Data Comenzii]", datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         
         SC_introduction += "<h3>Detalii comandă" + introduction.split("Detalii comandă")[1]
@@ -74,17 +74,17 @@ def send_db_user_email_message(cart_services, user, user_email):
     total_price = 0
     for service in cart_services:
         base_service = service.base_service
-        price = "Gratis" if base_service.price == 'free' else base_service.price
+        option = service.option
+
+        price = "Gratis" if option.price == '0' or option.price == "free" else option.price
 
         html_service = service_template.replace("[Nume Serviciu]", base_service.name)
-        html_service = html_service.replace("[Preț Serviciu]", price)
+        html_service = html_service.replace("[Preț Serviciu]", str(price))
         html_service = html_service.replace("[Organizator]", base_service.organiser)
-        html_service = html_service.replace("[Nume Senior]", service.senior_name)
-        html_service = html_service.replace("[Nume Adult]", service.adult_name)
-        html_service = html_service.replace("[Însoțitor]", service.companion)
-        html_service = html_service.replace("[Număr de telefon]", service.phone_number)
+        html_service = html_service.replace("[Participanți]", metadata["participants_names"])
+        html_service = html_service.replace("[Număr de telefon]", metadata["phone_number"])
         
-        total_price += float(base_service.price) if base_service.price != 'free' else 0
+        total_price += float(option.price) if option.price != 'free' else 0
         activities.append(html_service)
     
     introduction = introduction.replace("[Total Comandă]", str(total_price))
@@ -114,8 +114,7 @@ def send_db_user_email_message(cart_services, user, user_email):
     recipient_list = ["hello@thesilvercare.com"]
     # send_mail(subject, alternative_plain_message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=message)
 
-# @api_view(['POST'])
-def checkout_send_email(user, user_email):
+def checkout_send_email(user, user_email, metadata):
     # user = get_user_from_token_request(request)
     cart = user.cart
     cart_services = cart.cartservice_set.all()
@@ -123,10 +122,9 @@ def checkout_send_email(user, user_email):
     if len(cart_services) == 0:
         return JsonResponse({"message":"Nu exista servicii in cos!"}, status = 200)
 
-    send_db_user_email_message(cart_services, user, user_email)
+    send_db_user_email_message(cart_services, user, user_email, metadata)
 
-    transfer_cart_to_purchase(cart_services, user)
-    return JsonResponse('Email sent', safe = False, status = 200)
+    # transfer_cart_to_purchase(cart_services, user)
 
 def send_guest_user_email_message(command_email, cart_services):
     introduction = ""

@@ -64,13 +64,13 @@ class Service(models.Model):
 class PurchasedService(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null = True)
     base_service = models.ForeignKey(Service, on_delete=models.SET_NULL, null = True)
+    option = models.ForeignKey(ServiceOption, on_delete=models.SET_NULL, null = True)
 
-    senior_name = models.CharField(max_length=100)
-    adult_name = models.CharField(max_length=100, null = True)
+    participants_names = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=100)
-    companion = models.CharField(max_length=100, null = True)
-    email = models.CharField(max_length=100)
     payment = models.ForeignKey('payments.Payment', on_delete = models.SET_NULL, null = True)
+
+    command_number = models.CharField(max_length=50)
 
 class CartService(models.Model):
     cart = models.ForeignKey('cart.Cart', on_delete=models.SET_NULL, null = True)

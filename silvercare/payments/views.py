@@ -11,40 +11,48 @@ import json
 import environ
 from rest_framework.decorators import api_view
 from login.utils import get_user_from_token_request
-from services.models import Service, CartService
+from services.models import Service, CartService, ServiceOption
 from .models import Payment, Checkout, TemporaryGuestMetadata
 from django.contrib.auth.models import User
 import time
 from emailApp.views import checkout_send_email, guest_checkout_send_email
 from services.models import PurchasedService
+from emailApp.views import generate_command_number
 
 env = environ.Env()
 environ.Env.read_env()
 
-stripe.api_key = env('SILVERCARE_STRIPE_SECRET_KEY')
+stripe.api_key = env('SILVERCARE_PROD_STRIPE_SECRET_KEY')
 BASE_URL=env('SILVERCARE_BASE_URL')
 
-def checkout_cart(user, payment_obj):
+required_fields = ['participants_names', 'phone_number']
+
+def checkout_cart(user, payment_obj, metadata):
     cart = user.cart
-    cart_services = cart.cart_services.all()
+    cart_services = cart.cartservice_set.all()
     
     for cart_service in cart_services:
         purchased_service = PurchasedService.objects.create(user=user,
+                                                            option=cart_service.option,
+                                                            participants_names=metadata["participants_names"],
                                                             base_service=cart_service.base_service,
-                                                            senior_name=cart_service.senior_name,
-                                                            adult_name=cart_service.adult_name,
-                                                            phone_number=cart_service.phone_number,
-                                                            companion=cart_service.companion,
-                                                            email=cart_service.email,
-                                                            payment = payment_obj )
+                                                            phone_number=metadata["phone_number"],
+                                                            payment = payment_obj,
+                                                            command_number = metadata["cmd"])
         purchased_service.save()
     
-    cart.cart_services.all().delete()
+    cart.cartservice_set.all().delete()
+    cart.save()
     
 
 @api_view(['POST'])
 def create_checkout_session(request):
     data = json.loads(request.body)
+    cmd = generate_command_number()
+
+    for field in required_fields:
+        if field not in data:
+            return HttpResponse("Field " + field + " is required!", status = 400)
 
     if data["isGuest"] == True:
         services = data["services"]   
@@ -57,41 +65,51 @@ def create_checkout_session(request):
         cart = user.cart
         services = cart.cartservice_set.all()
 
-        metadata = {'user_id': user.id}
+        metadata = {'user_id': user.id,
+                    'participants_names': ','.join(data['participants_names']),
+                    'phone_number': data['phone_number'],
+                    'cmd': cmd}
 
         if len(services) == 0:
             return HttpResponse({"message":"Nu exista servicii in cos!"}, status = 200)
 
+    # The items that appear on the stripe checkout page
     line_items = []    
     for service in services:
         if isinstance(service, CartService):
+            option = service.option
             base_service = service.base_service
+            quantity = service.number_of_participants
         else:
+            option = ServiceOption.objects.get(id=service["option_details"]["id"])
             base_service = Service.objects.get(id=service["service_id"])
-        price = 0 if base_service.price == 'free' else base_service.price
+            quantity = service["number_of_participants"]
+
+        price = 0 if option.price == 'free' else option.price
 
         line_items.append({
             "price_data": {
+                    "tax_behavior": "inclusive",
                     "currency": "ron",
                     "unit_amount": int(round(float(price), 2) * 100),
                     "product_data": {
                         "name": base_service.name,
                     },
                 },
-            "quantity": 1,
+            "quantity": quantity,
         })
-    try:
-        checkout_session = stripe.checkout.Session.create(
-            line_items=line_items,
-            mode='payment',
-            success_url=BASE_URL + '/checkout-success',
-            cancel_url=BASE_URL + '/checkout-fail',
-            automatic_tax={'enabled': True},
-            locale="ro",
-            metadata=metadata
-        )
-    except Exception as e:
-        return HttpResponse("Error creating checkout session: " + str(e), status = 500)
+    # try:
+    checkout_session = stripe.checkout.Session.create(
+        line_items=line_items,
+        mode='payment',
+        success_url=BASE_URL + f"/checkout-success/{cmd}",
+        cancel_url=BASE_URL + '/checkout-fail',
+        automatic_tax={'enabled': True},
+        locale="ro",
+        metadata=metadata
+    )
+    # except Exception as e:
+        # return HttpResponse("Error creating checkout session: " + str(e), status = 500)
     
     return JsonResponse({"id":checkout_session.id}, status=200)
 
@@ -110,8 +128,8 @@ def match_checkout_payment(payment_obj, checkout_obj):
 
         payment_obj.user = user
         
-        checkout_send_email(user, checkout_obj.checkout_email)
-        checkout_cart(user, payment_obj)
+        checkout_send_email(user, user.email, metadata)
+        checkout_cart(user, payment_obj, metadata)
 
     payment_obj.save()
 
