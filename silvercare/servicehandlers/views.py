@@ -9,6 +9,11 @@ from rest_framework.decorators import api_view
 from services.views import get_services_helper
 from search.views import search_helper
 from services.utils import delete_service_solr, add_service_solr
+from enum import Enum
+
+class ServicesQueryType(Enum):
+    NORMAL = 1
+    EDIT_TABLE = 2
 
 def location_filter(services, location):
     return [service for service in services\
@@ -59,6 +64,22 @@ def get_services(request):
 
     total = len(services)
     services, _ = get_services_helper(services[inf_lim:sup_lim])
+    
+    type_of_query = request.GET.get('type_of_query', ServicesQueryType.NORMAL.value)
+    
+    try:
+        type_of_query = int(type_of_query)
+    except:
+        type_of_query = ServicesQueryType.NORMAL.value
+    
+    if type_of_query == ServicesQueryType.EDIT_TABLE.value:
+        services = [{
+            "name": service["name"],
+            "id": service["id"],
+            "category": service["category"],
+            "organiser": service["organiser"],
+        } for service in services]
+
     return JsonResponse({"services":services, "total":total}, safe = False, status=200)
  
 @api_view(['GET'])

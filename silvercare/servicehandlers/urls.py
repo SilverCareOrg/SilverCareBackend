@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import get_services, get_services_by_organiser, delete_service, get_service_by_id
+from .views import get_services,\
+    get_services_by_organiser,\
+    delete_service,\
+    get_service_by_id
 
 urlpatterns = [
     path('get_services', get_services),
