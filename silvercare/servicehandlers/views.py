@@ -113,4 +113,41 @@ def delete_service(request):
         return JsonResponse({'message' : 'Service not found'}, safe = False)
 
 
+@api_view(["POST"])
+def modify_service(request):
+
+    user = get_user_from_token_request(request)
+    if not user.is_staff:
+            return Response({'message': 'You are not authorized to add services'}, status=403)
+    try:
+        service_id = request.GET.get('id', 0)
+        service = Service.objects.get(id = service_id)
+        if service:
+            service.description = request.GET.get('description', 0)
+            service.price = request.GET.get('price', 0)
+            service.image = request.GET.get('image', 0)
+            service.image_type = request.GET.get('image_type', 0)
+            service.name = request.GET.get('name', 0)
+            service.rating = request.GET.get('rating', 0)
+            service.category = request.GET.get('category', 0)
+            service.organiser = request.GET.get('organiser', 0)
+            service.raw_name = request.GET.get('raw_name', 0)
+            service.location = request.GET.get('location', 0)
+            service.options_common_city = request.GET.get('options_common_city', 0)
+            service.common_location = request.GET.get('common_location', 0)
+            service.map_location = request.GET.get('map_location', 0)
+            service.semantic_field = request.GET.get('semantic_field', 0)
+            service.city = request.GET.get('city', 0)
+            service.county = request.GET.get('county', 0)
+            service.iban = request.GET.get('iban', 0)
+            service.extra_details = request.GET.get('extra_details', 0)
+            
+            service.save()
+            return JsonResponse({'message': 'Service updated successfully!'}, status=200)
+    except:
+            return JsonResponse({'message': 'Error while modifying the service.'}, status=404)
+
+
+
+
 
