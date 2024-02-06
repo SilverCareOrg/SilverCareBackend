@@ -71,14 +71,14 @@ class EditArticle(APIView):
         if not user.is_staff:
             return JsonResponse({'message': 'You are not authorized to add services'}, status=400)
 
-        article = Article.objects.get(id=request.GET.get("id"))
+        data = request.data
+        article = Article.objects.get(id=data.get("id"))
         if article is None:
             return JsonResponse("Article not found", safe=False, status=400)
-
-        data = request.data
+        
         # try:
         for x in ["title", "author", "reading_time", "category", "description"]:
-            if x not in data:
+            if x in data:
                 setattr(article, x, data.get(x))
 
         article.save()
@@ -98,9 +98,20 @@ class EditArticle(APIView):
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
         merged = list(zip(texts, paragraph_images))
-        print(merged)
+
+        # First delete all texts and images associated with the current article
+        # Delete Texts first
+        texts = article.articletext_set.all()
+        for text in texts:
+            text.delete()
+            
+        # Delete Images
+        images = article.articleimage_set.all()
+        for image in images:
+            image.delete()
+            
         for i, (text, image) in enumerate(merged):
-            article.add_text(
+             article.add_text(
                 id=str(uuid.uuid4()),
                 position=i,
                 text_data=text["text"],
@@ -108,9 +119,7 @@ class EditArticle(APIView):
             )
 
         article.save()
-        return JsonResponse("Article added successfully!", safe=False, status=200)
-        # except Exception as e:
-        #     return JsonResponse(str(e), safe=False, status=400)
+        return JsonResponse("Article edited successfully!", safe=False, status=200)
 
 @api_view(['GET'])
 def get_articles_types(request):
