@@ -1,5 +1,6 @@
 from services.models import Service
 import mysql.connector
+import MySQLdb
 import sys
 import json
 from pysolr import Solr
@@ -9,12 +10,15 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-db = mysql.connector.connect(
-    host = "localhost",
-    user = env('SILVERCARE_DATABASE_USER'),
-    passwd = env('SILVERCARE_DATABASE_PASSWORD'),
-    database = env('SILVERCARE_DATABASE_NAME')
-)
+def instantiate_db():
+    return MySQLdb.Connect(
+        host = "localhost",
+        port = 3306,
+        user = env('SILVERCARE_DATABASE_USER'),
+        passwd = env('SILVERCARE_DATABASE_PASSWORD'),
+        db = env('SILVERCARE_DATABASE_NAME')
+    )
+
 def delete_service_solr(id):
     conn = Solr('http://localhost:8983/solr/new_core', always_commit = True)
     id_str = str(id)
@@ -33,7 +37,7 @@ def add_service_solr(name,organiser):
 
 def add_everything_solr():
     conn = Solr('http://localhost:8983/solr/new_core', always_commit = True)
-    mycursor = db.cursor()
+    mycursor = instantiate_db().cursor()
     mycursor.execute("SELECT * FROM services_service")
     for field in mycursor.fetchall():
         var = {'id':str(field[0]),
