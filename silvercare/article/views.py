@@ -118,8 +118,8 @@ def get_articles_types(request):
 
 @api_view(['GET'])
 def get_articles(request):
-    inf_limit = request.GET.get('inf_limit', 0)
-    sup_limit = request.GET.get('sup_limit', 10)
+    inf_limit = int(request.GET.get('inf_limit', 0))
+    sup_limit = int(request.GET.get('sup_limit', 10))
     category = request.GET.get('category', None)
 
     if sup_limit < inf_limit:
