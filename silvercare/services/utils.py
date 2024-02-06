@@ -10,7 +10,7 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-def instantiate_db():
+def get_db_instance():
     return MySQLdb.Connect(
         host = "localhost",
         port = 3306,
@@ -37,7 +37,7 @@ def add_service_solr(name,organiser):
 
 def add_everything_solr():
     conn = Solr('http://localhost:8983/solr/new_core', always_commit = True)
-    mycursor = instantiate_db().cursor()
+    mycursor = get_db_instance().cursor()
     mycursor.execute("SELECT * FROM services_service")
     for field in mycursor.fetchall():
         var = {'id':str(field[0]),
