@@ -65,7 +65,7 @@ jobs:
         SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
         SERVER_USER: ${{ secrets.SERVER_USER }}
       run: |
-        scp -prq ./backend $ ${SERVER_USER}@${SERVER_ADDR}:~
+        scp -prq ./backend ${SERVER_USER}@${SERVER_ADDR}:~
     - name: Run app
       uses: appleboy/ssh-action@master
       with:
