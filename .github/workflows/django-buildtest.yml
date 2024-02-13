@@ -22,10 +22,10 @@ jobs:
       run: |
         sudo apt-get update 
         python3 -m pip install --upgrade pip
-        pip3 install -r silvercare/requirements.txt
+        pip3 install -r backend/requirements.txt
     - name: Run Tests
       run: |
-        python3 silvercare/manage.py test
+        python3 backend/manage.py test
       env:
         SILVERCARE_SECRET_KEY: ${{ secrets.SILVERCARE_SECRET_KEY }}
         SILVERCARE_DATABASE_NAME: ${{ secrets.SILVERCARE_DATABASE_NAME }}
@@ -63,19 +63,20 @@ jobs:
       shell: bash
       env:
         SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
       run: |
-        scp -prq ./silvercare ubuntu@${SERVER_ADDR}:~
+        scp -prq ./backend $ ${SERVER_USER}@${SERVER_ADDR}:~
     - name: Run app
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SERVER_ADDR }}
-        username: ubuntu
+        username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_CONNECT_KEY }}
         port: 22
         script_stop: true
         script: |
           ./setup_env.sh
-          cd silvercare
+          cd backend
           python3 -m pip install --upgrade pip
           pip3 install -r requirements.txt
           python3 manage.py makemigrations --merge
