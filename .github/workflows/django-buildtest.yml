@@ -53,23 +53,18 @@ jobs:
       env:
         PRIVATE_KEY: ${{ secrets.SERVER_CONNECT_KEY }}
         SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
-        SERVER_PASSPHRASE: ${{ secrets.SERVER_PASSPHRASE }}
-      
+
       # Connection with server
       run: |
-        eval "$(ssh-agent -s)"
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        echo "$PRIVATE_KEY" | tr -d '\r' | ssh-add - <<< "${SERVER_PASSPHRASE}"
+        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
         ssh-keyscan -H $SERVER_ADDR > ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
     - name: Publish
       shell: bash
       env:
         SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
         SERVER_USER: ${{ secrets.SERVER_USER }}
       run: |
-        # Use SERVER_SSH_PASSPHRASE:
         scp -prq ./backend $ ${SERVER_USER}@${SERVER_ADDR}:~
     - name: Run app
       uses: appleboy/ssh-action@master
