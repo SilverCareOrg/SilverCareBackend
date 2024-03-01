@@ -43,23 +43,25 @@ class CreateArticle(APIView):
 
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
-        merged = list(zip(texts, paragraph_images))
-        print(merged)
-        for i, (text, image) in enumerate(merged):
+        image_indexes = data.get("imageIndexes")
+        for i in range(len(texts)):
             try:
+                try:
+                    pos = image_indexes.index(str(i))                    
+                except:
+                    pos = -1
+                
                 article.add_text(
                     id=str(uuid.uuid4()),
                     position=i,
-                    text_data=text["text"],
-                    image_data=image
+                    text_data=texts[i]["text"],
+                    image_data=paragraph_images[pos] if pos != -1 else None
                 )
             except Exception as e:
                 return JsonResponse(str(e), safe=False, status=400)
 
         article.save()
         return JsonResponse("Article added successfully!", safe=False, status=200)
-        # except Exception as e:
-        #     return JsonResponse(str(e), safe=False, status=400)
 
 class EditArticle(APIView):
     parser_classes = [MultiPartParser, FormParser]
@@ -100,7 +102,7 @@ class EditArticle(APIView):
 
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
-        merged = list(zip(texts, paragraph_images))
+        image_indexes = data.get("imageIndexes")
 
         # First delete all texts and images associated with the current article
         # Delete Texts first
@@ -113,13 +115,21 @@ class EditArticle(APIView):
         for image in images:
             image.delete()
             
-        for i, (text, image) in enumerate(merged):
-             article.add_text(
-                id=str(uuid.uuid4()),
-                position=i,
-                text_data=text["text"],
-                image_data=image
-            )
+        for i in range(len(texts)):
+            try:
+                try:
+                    pos = image_indexes.index(str(i))                    
+                except:
+                    pos = -1
+                
+                article.add_text(
+                    id=str(uuid.uuid4()),
+                    position=i,
+                    text_data=texts[i]["text"],
+                    image_data=paragraph_images[pos] if pos != -1 else None
+                )
+            except Exception as e:
+                return JsonResponse(str(e), safe=False, status=400)
 
         article.save()
         return JsonResponse("Article edited successfully!", safe=False, status=200)
