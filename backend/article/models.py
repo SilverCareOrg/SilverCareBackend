@@ -50,10 +50,11 @@ class Article(models.Model):
         f.close()
 
     def add_text(self, id, position, text_data, image_data):
-        if text_data is None:
+        if text_data is None or text_data == "":
             raise Exception("No text provided")
         
         text = ArticleText(text_id=id, position=position, article=self, text=text_data)
+        text.save()
         
         if image_data is not None:
             self.add_image(id, position, False, image_data)

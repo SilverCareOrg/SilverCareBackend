@@ -46,12 +46,15 @@ class CreateArticle(APIView):
         merged = list(zip(texts, paragraph_images))
         print(merged)
         for i, (text, image) in enumerate(merged):
-            article.add_text(
-                id=str(uuid.uuid4()),
-                position=i,
-                text_data=text["text"],
-                image_data=image
-            )
+            try:
+                article.add_text(
+                    id=str(uuid.uuid4()),
+                    position=i,
+                    text_data=text["text"],
+                    image_data=image
+                )
+            except Exception as e:
+                return JsonResponse(str(e), safe=False, status=400)
 
         article.save()
         return JsonResponse("Article added successfully!", safe=False, status=200)
