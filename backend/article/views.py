@@ -45,9 +45,9 @@ class CreateArticle(APIView):
         paragraph_images = request.FILES.getlist('paragraphImage')
         image_indexes = data.get("imageIndexes")
         for i in range(len(texts)):
-            try:
+            # try:
                 try:
-                    pos = image_indexes.index(str(i))                    
+                    pos = image_indexes.index(int(i))
                 except:
                     pos = -1
                 
@@ -57,8 +57,8 @@ class CreateArticle(APIView):
                     text_data=texts[i]["text"],
                     image_data=paragraph_images[pos] if pos != -1 else None
                 )
-            except Exception as e:
-                return JsonResponse(str(e), safe=False, status=400)
+            # except Exception as e:
+            #     return JsonResponse(str(e), safe=False, status=400)
 
         article.save()
         return JsonResponse("Article added successfully!", safe=False, status=200)
@@ -118,7 +118,7 @@ class EditArticle(APIView):
         for i in range(len(texts)):
             try:
                 try:
-                    pos = image_indexes.index(str(i))                    
+                    pos = image_indexes.index(int(i))
                 except:
                     pos = -1
                 
