@@ -26,7 +26,7 @@ class ArticleText(models.Model):
     text = models.CharField(max_length=1000)
     position = models.IntegerField()
     article = models.ForeignKey("article.Article", on_delete=models.SET_NULL, null=True)
-    article_image = models.OneToOneField(ArticleImage, on_delete=models.CASCADE, null=True)
+    article_image = models.OneToOneField(ArticleImage, on_delete=models.SET_NULL, null=True)
 
 CATEGORY_CHOICES = [(tag.value[0], tag.value[1]) for tag in CategoryType]
 
@@ -43,7 +43,7 @@ class Article(models.Model):
         
         image = ArticleImage(id=image_id, position=position, article=self, is_main_image=is_main_image)
         image.save()
-        
+
         # Save image with the id
         f = open(os.path.join(os.path.dirname(__file__), 'images/' + image_id + "." + str(image_data).split('.')[-1]), 'wb')
         f.write(image_data.read())
@@ -52,7 +52,7 @@ class Article(models.Model):
     def add_text(self, id, position, text_data, image_data):
         if text_data is None or text_data == "":
             raise Exception("No text provided")
-        
+
         text = ArticleText(text_id=id, position=position, article=self, text=text_data)
         text.save()
         
@@ -60,4 +60,3 @@ class Article(models.Model):
             self.add_image(id, position, False, image_data)
             text.article_image = ArticleImage.objects.get(id=id)
             text.save()
-            

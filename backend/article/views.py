@@ -43,22 +43,22 @@ class CreateArticle(APIView):
 
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
-        image_indexes = data.get("imageIndexes")
+        image_indexes = [int(x) for x in data.get("imageIndexes").split(",")]
         for i in range(len(texts)):
-            # try:
+            try:
                 try:
-                    pos = image_indexes.index(int(i))
+                    pos = image_indexes.index(i)
                 except:
                     pos = -1
-                
+
                 article.add_text(
                     id=str(uuid.uuid4()),
                     position=i,
                     text_data=texts[i]["text"],
                     image_data=paragraph_images[pos] if pos != -1 else None
                 )
-            # except Exception as e:
-            #     return JsonResponse(str(e), safe=False, status=400)
+            except Exception as e:
+                return JsonResponse(str(e), safe=False, status=400)
 
         article.save()
         return JsonResponse("Article added successfully!", safe=False, status=200)
@@ -102,8 +102,8 @@ class EditArticle(APIView):
 
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
-        image_indexes = data.get("imageIndexes")
-
+        image_indexes = [int(x) for x in data.get("imageIndexes").split(",")]
+        
         # First delete all texts and images associated with the current article
         # Delete Texts first
         texts = article.articletext_set.all()
@@ -118,10 +118,10 @@ class EditArticle(APIView):
         for i in range(len(texts)):
             try:
                 try:
-                    pos = image_indexes.index(int(i))
+                    pos = image_indexes.index(i)
                 except:
                     pos = -1
-                
+
                 article.add_text(
                     id=str(uuid.uuid4()),
                     position=i,
