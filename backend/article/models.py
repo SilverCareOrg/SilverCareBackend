@@ -26,7 +26,7 @@ class ArticleText(models.Model):
     text = models.CharField(max_length=1000)
     position = models.IntegerField()
     article = models.ForeignKey("article.Article", on_delete=models.SET_NULL, null=True)
-    article_image = models.OneToOneField(ArticleImage, on_delete=models.CASCADE)
+    article_image = models.OneToOneField(ArticleImage, on_delete=models.CASCADE, null=True)
 
 CATEGORY_CHOICES = [(tag.value[0], tag.value[1]) for tag in CategoryType]
 
