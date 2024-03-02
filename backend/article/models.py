@@ -36,6 +36,7 @@ class Article(models.Model):
     description = models.CharField(max_length=1000)
     reading_time = models.IntegerField()
     category = models.IntegerField(choices=CATEGORY_CHOICES)
+    hidden = models.BooleanField(default=True)
 
     def add_image(self, image_id, position, is_main_image=False, image_data=None):
         if image_data is None:
