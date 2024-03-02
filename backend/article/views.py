@@ -178,17 +178,23 @@ def get_articles(request):
     user = get_user_from_token_request(request)
     if not user.is_staff: # If the user is not staff, we hide the hidden articles
         articles = articles.filter(hidden=False)
+        total_no_articles = Article.objects.filter(hidden=False).count()
+    else:
+        total_no_articles = Article.objects.count()
     
-    return JsonResponse([{
-        "id": article.id,
-        "title": article.title,
-        "author": article.author,
-        "description": article.description,
-        "reading_time": article.reading_time,
-        "category": article.category,
-        "main_image": article.articleimage_set.get(is_main_image=True).id,
-        "hidden": article.hidden
-    } for article in articles], safe=False, status=200)
+    return JsonResponse({
+        "articles": [{
+            "id": article.id,
+            "title": article.title,
+            "author": article.author,
+            "description": article.description,
+            "reading_time": article.reading_time,
+            "category": article.category,
+            "main_image": article.articleimage_set.get(is_main_image=True).id,
+            "hidden": article.hidden
+            } for article in articles],
+        "total": total_no_articles
+        }, safe=False, status=200)
     
 @api_view(['GET'])
 def get_article(request):
