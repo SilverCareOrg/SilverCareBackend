@@ -186,7 +186,8 @@ def get_articles(request):
         "description": article.description,
         "reading_time": article.reading_time,
         "category": article.category,
-        "main_image": article.articleimage_set.get(is_main_image=True).id
+        "main_image": article.articleimage_set.get(is_main_image=True).id,
+        "hidden": article.hidden
     } for article in articles], safe=False, status=200)
     
 @api_view(['GET'])
