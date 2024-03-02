@@ -1,6 +1,12 @@
 from django.db import models
+from s3.s3_client import S3Client
 from enum import Enum
+import environ
 import os
+
+# Environment variables
+env = environ.Env()
+environ.Env.read_env()
 
 class CategoryType(Enum):
     PRODUCTS_USE = (0, "Utilizarea produselor")
@@ -23,7 +29,7 @@ class ArticleImage(models.Model):
 
 class ArticleText(models.Model):
     text_id = models.CharField(max_length=37, primary_key=True)
-    text = models.CharField(max_length=1000)
+    text = models.CharField(max_length=5000)
     position = models.IntegerField()
     article = models.ForeignKey("article.Article", on_delete=models.SET_NULL, null=True)
     article_image = models.OneToOneField(ArticleImage, on_delete=models.SET_NULL, null=True)
@@ -33,7 +39,7 @@ CATEGORY_CHOICES = [(tag.value[0], tag.value[1]) for tag in CategoryType]
 class Article(models.Model):
     title = models.CharField(max_length=100)
     author = models.CharField(max_length=100)
-    description = models.CharField(max_length=1000)
+    description = models.CharField(max_length=5000)
     reading_time = models.IntegerField()
     category = models.IntegerField(choices=CATEGORY_CHOICES)
     hidden = models.BooleanField(default=True)
@@ -46,9 +52,13 @@ class Article(models.Model):
         image.save()
 
         # Save image with the id
-        f = open(os.path.join(os.path.dirname(__file__), 'images/' + image_id + "." + str(image_data).split('.')[-1]), 'wb')
-        f.write(image_data.read())
-        f.close()
+        S3Client.get_instance()
+        S3Client.upload_image_encode_base64(env('SILVERCARE_AWS_S3_ARTICLES_SUBDIR'), image_id, image_data)
+        
+        # Uncomment the following lines to save the image locally
+        # f = open(os.path.join(os.path.dirname(__file__), 'images/' + image_id + "." + str(image_data).split('.')[-1]), 'wb')
+        # f.write(image_data.read())
+        # f.close()
 
     def add_text(self, id, position, text_data, image_data):
         if text_data is None or text_data == "":

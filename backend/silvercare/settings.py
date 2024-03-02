@@ -57,7 +57,8 @@ INSTALLED_APPS = [
     'search',
     'servicehandlers',
     'userhandlers',
-    'article'
+    'article',
+    's3'
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
