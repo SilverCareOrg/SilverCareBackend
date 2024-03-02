@@ -138,6 +138,18 @@ class EditArticle(APIView):
 def get_articles_types(request):
     return JsonResponse(CategoryType.get_types(), safe=False, status=200)
 
+@api_view(['POST'])
+def set_article_visibility(request):
+    user = get_user_from_token_request(request)
+    if not user.is_staff:
+        return JsonResponse({'message': 'You are not authorized to hide articles'}, status=403)
+
+    data = json.loads(request.body)
+    article = Article.objects.get(id=data.get("id"))
+    article.hidden = data.get("hidden")
+    article.save()
+    return JsonResponse("Article hidden status updated successfully!", safe=False, status=200)
+
 @api_view(['GET'])
 def get_articles(request):
     inf_limit = int(request.GET.get('inf_limit', 0))
@@ -150,11 +162,14 @@ def get_articles(request):
     if sup_limit > inf_limit + 20:
         sup_limit = inf_limit + 20
     
-    
     if category is not None:
         articles = Article.objects.filter(category=category)[int(inf_limit):int(sup_limit)]
     else:
         articles = Article.objects.all()[int(inf_limit):int(sup_limit)]  
+    
+    user = get_user_from_token_request(request)
+    if not user.is_staff: # If the user is not staff, we hide the hidden articles
+        articles = articles.filter(hidden=False)
     
     return JsonResponse([{
         "id": article.id,
@@ -174,6 +189,11 @@ def get_article(request):
             return JsonResponse("No id provided", safe=False, status=400)
 
         article = Article.objects.get(id=article_id)
+        
+        user = get_user_from_token_request(request)
+        if not user.is_staff and article.hidden:
+            return JsonResponse("Article not found", safe=False, status=400)
+        
         main_image = article.articleimage_set.get(is_main_image=True).id
         texts = article.articletext_set.all()
         texts_json = []
