@@ -7,8 +7,14 @@ from rest_framework import serializers
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from login.utils import get_user_from_token_request
+from s3.s3_client import S3Client
+import environ
 import uuid
 import json
+
+# Environment variables
+env = environ.Env()
+environ.Env.read_env()
 
 class CreateArticle(APIView):
     parser_classes = [MultiPartParser, FormParser]
@@ -182,6 +188,9 @@ def get_articles(request):
     else:
         total_no_articles = Article.objects.count()
     
+    # instantiate s3
+    S3Client.get_instance()
+
     return JsonResponse({
         "articles": [{
             "id": article.id,
@@ -190,7 +199,7 @@ def get_articles(request):
             "description": article.description,
             "reading_time": article.reading_time,
             "category": article.category,
-            "main_image": article.articleimage_set.get(is_main_image=True).id,
+            "main_image": S3Client.download_image(env('SILVERCARE_AWS_S3_ARTICLES_SUBDIR'), article.articleimage_set.get(is_main_image=True).id),
             "hidden": article.hidden
             } for article in articles],
         "total": total_no_articles
@@ -209,16 +218,19 @@ def get_article(request):
         if not user.is_staff and article.hidden:
             return JsonResponse("Article not found", safe=False, status=400)
         
-        main_image = article.articleimage_set.get(is_main_image=True).id
+        # instantiate s3
+        S3Client.get_instance()
+        
+        main_image = S3Client.download_image(env('SILVERCARE_AWS_S3_ARTICLES_SUBDIR'), article.articleimage_set.get(is_main_image=True).id),
         texts = article.articletext_set.all()
         texts_json = []
 
         for text in texts:
-            image = text.article_image.id if text.article_image else None
+            image_id = text.article_image.id if text.article_image else None
             texts_json.append({
                 "id": text.text_id,
                 "text": text.text,
-                "image": image,
+                "image": S3Client.download_image(env('SILVERCARE_AWS_S3_ARTICLES_SUBDIR'), image_id),
                 "position": text.position,
             })
 
