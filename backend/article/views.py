@@ -145,8 +145,16 @@ def set_article_visibility(request):
         return JsonResponse({'message': 'You are not authorized to hide articles'}, status=403)
 
     data = json.loads(request.body)
-    article = Article.objects.get(id=data.get("id"))
-    article.hidden = data.get("hidden")
+    
+    if "hidden" not in data or "id" not in data:
+        return JsonResponse("Missing parameters", safe=False, status=400)
+    
+    article = Article.objects.get(id=data["id"])
+    
+    if article is None:
+        return JsonResponse("Article not found", safe=False, status=400)
+    
+    article.hidden = data["hidden"]
     article.save()
     return JsonResponse("Article hidden status updated successfully!", safe=False, status=200)
 
