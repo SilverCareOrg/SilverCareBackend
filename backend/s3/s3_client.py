@@ -54,6 +54,8 @@ class S3Client:
         Returns:
             bytes: The contents of the file.
         """
+        if not id:
+            return None
         return S3Client._instance.get_object(Bucket=S3Client.bucket_name, Key=f"{S3Client.directory}/{category}/{id}")["Body"].read().decode('utf-8')
 
     def download_image_encode_base64(category, id):
