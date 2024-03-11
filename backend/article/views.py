@@ -181,11 +181,14 @@ def get_articles(request):
     else:
         articles = Article.objects.all()[int(inf_limit):int(sup_limit)]  
     
-    user = get_user_from_token_request(request)
-    if not user.is_staff: # If the user is not staff, we hide the hidden articles
-        articles = articles.filter(hidden=False)
-        total_no_articles = Article.objects.filter(hidden=False).count()
-    else:
+    try:
+        user = get_user_from_token_request(request)
+        if not user.is_staff: # If the user is not staff, we hide the hidden articles
+            articles = articles.filter(hidden=False)
+            total_no_articles = Article.objects.filter(hidden=False).count()
+        else:
+            total_no_articles = Article.objects.count()
+    except Exception as e:
         total_no_articles = Article.objects.count()
     
     # instantiate s3
@@ -214,9 +217,13 @@ def get_article(request):
 
         article = Article.objects.get(id=article_id)
         
-        user = get_user_from_token_request(request)
-        if not user.is_staff and article.hidden:
-            return JsonResponse("Article not found", safe=False, status=400)
+        try:
+            user = get_user_from_token_request(request)
+            if not user.is_staff and article.hidden:
+                return JsonResponse("Article not found", safe=False, status=400)
+        except Exception as e:
+            if article.hidden:
+                return JsonResponse("Article not found", safe=False, status=400)
         
         # instantiate s3
         S3Client.get_instance()
