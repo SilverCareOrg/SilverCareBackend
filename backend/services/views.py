@@ -166,6 +166,7 @@ def get_services_helper(services):
 
     for service in services:
         serialized_service = {
+            "hidden": service.hidden,
             "name": service.name,
             "id": service.id,
             "category": service.category.capitalize(),
@@ -254,3 +255,23 @@ def get_homepage_best_selling_products(request):
 def add_to_solr(request):
     add_everything_solr()
     return JsonResponse("Database loaded", safe = False)
+
+@api_view(['POST'])
+def set_service_visibility(request):
+    user = get_user_from_token_request(request)
+    if not user.is_staff:
+        return JsonResponse({'message': 'You are not authorized to hide services'}, status=403)
+
+    data = json.loads(request.body)
+    
+    if "hidden" not in data or "id" not in data:
+        return JsonResponse("Missing parameters", safe=False, status=400)
+    
+    svc = Service.objects.get(id=data["id"])
+
+    if svc is None:
+        return JsonResponse("Service not found", safe=False, status=400)
+    
+    svc.hidden = data["hidden"]
+    svc.save()
+    return JsonResponse("Service hidden status updated successfully!", safe=False, status=200)
