@@ -78,7 +78,15 @@ def get_services(request):
             "id": service["id"],
             "category": service["category"],
             "organiser": service["organiser"],
+            "hidden": service["hidden"]
         } for service in services]
+
+    try:
+        user = get_user_from_token_request(request)
+        if not user.is_staff:
+            services = [service for service in services if not service["hidden"]]
+    except:
+        services = [service for service in services if not service["hidden"]]
 
     return JsonResponse({"services":services, "total":total}, safe = False, status=200)
  

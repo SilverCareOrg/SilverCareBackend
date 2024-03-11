@@ -59,6 +59,9 @@ class Service(models.Model):
 
     # Custom details about the service - dumped json
     extra_details = models.CharField(max_length=3000, null = True)    
+    
+    # hidden or not
+    hidden = models.BooleanField(default=False)
 
 
 class PurchasedService(models.Model):
