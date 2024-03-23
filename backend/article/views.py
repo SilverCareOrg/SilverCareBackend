@@ -96,16 +96,20 @@ class EditArticle(APIView):
 
         main_image = request.FILES.get('image')
         if main_image:
-            ArticleImage.objects.update_or_create(
+            old_id = article.articleimage_set.get(is_main_image=True).id
+            
+            # delete the existing object (main image)
+            ArticleImage.objects.filter(article=article, is_main_image=True).delete()
+        
+            # Create a new object
+            ArticleImage.objects.create(
                 article=article,
                 is_main_image=True,
-                defaults={
-                    "position": -1,
-                    "id": str(uuid.uuid4()),
-                    "image_data": main_image
-                }
+                position=-1,
+                id=old_id,
+                image_data=main_image
             )
-
+            
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
         image_indexes = [int(x) for x in data.get("imageIndexes").split(",")]
@@ -220,10 +224,10 @@ def get_article(request):
         try:
             user = get_user_from_token_request(request)
             if not user.is_staff and article.hidden:
-                return JsonResponse("Article not found", safe=False, status=400)
+                return JsonResponse("Article not found. Err2", safe=False, status=400)
         except Exception as e:
             if article.hidden:
-                return JsonResponse("Article not found", safe=False, status=400)
+                return JsonResponse("Article not found. Err3", safe=False, status=400)
         
         # instantiate s3
         S3Client.get_instance()
@@ -251,7 +255,7 @@ def get_article(request):
             "texts": texts_json
         }, safe=False, status=200)
     except Article.DoesNotExist:
-        return JsonResponse("Article not found", safe=False, status=400)
+        return JsonResponse("Article not found. Err1", safe=False, status=400)
 
 @api_view(['GET'])
 def delete_article(request):
