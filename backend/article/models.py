@@ -48,6 +48,10 @@ class Article(models.Model):
         if image_data is None:
             raise Exception("No image data provided")
         
+        # If there is already an image for this id, delete it
+        if ArticleImage.objects.filter(id=image_id).exists():
+            ArticleImage.objects.get(id=image_id).delete()
+        
         image = ArticleImage(id=image_id, position=position, article=self, is_main_image=is_main_image)
         image.save()
 
