@@ -102,13 +102,14 @@ class EditArticle(APIView):
             ArticleImage.objects.filter(article=article, is_main_image=True).delete()
         
             # Create a new object
-            ArticleImage.objects.create(
-                article=article,
-                is_main_image=True,
+            article.add_image(
+                image_id=old_id,
                 position=-1,
-                id=old_id,
+                is_main_image=True,
                 image_data=main_image
             )
+
+            article.save()
             
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
