@@ -30,6 +30,7 @@ class CreateArticle(APIView):
             return JsonResponse({'message': 'You are not authorized to add services'}, status=400)
 
         data = request.data
+
         # try:
         article = Article.objects.create(
             title=data.get("title"),
@@ -49,7 +50,8 @@ class CreateArticle(APIView):
 
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
-        image_indexes = [int(x) for x in data.get("imageIndexes").split(",")]
+        image_indexes = [int(x) for x in data.get("imageIndexes").split(",")] if len(data.get("imageIndexes")) > 0 else []
+
         for i in range(len(texts)):
             try:
                 try:
@@ -95,7 +97,7 @@ class EditArticle(APIView):
         article.save()
 
         main_image = request.FILES.get('image')
-        if main_image:
+        if main_image and not len(main_image) == 0:
             old_id = article.articleimage_set.get(is_main_image=True).id
             
             # delete the existing object (main image)
@@ -113,21 +115,22 @@ class EditArticle(APIView):
             
         texts = json.loads(data.get("paragraphText"))
         paragraph_images = request.FILES.getlist('paragraphImage')
-        image_indexes = [int(x) for x in data.get("imageIndexes").split(",")]
+        image_indexes = [int(x) for x in data.get("imageIndexes").split(",")] if len(data.get("imageIndexes")) > 0 else []
         
         # First delete all texts and images associated with the current article
         # Delete Texts first
-        texts = article.articletext_set.all()
-        for text in texts:
+        texts_obj = article.articletext_set.all()
+        for text in texts_obj:
             text.delete()
             
         # Delete Images
         images = article.articleimage_set.all()
         for image in images:
-            image.delete()
-            
+            if not image.is_main_image:
+                image.delete()
+
         for i in range(len(texts)):
-            try:
+            # try:
                 try:
                     pos = image_indexes.index(i)
                 except:
@@ -139,8 +142,8 @@ class EditArticle(APIView):
                     text_data=texts[i]["text"],
                     image_data=paragraph_images[pos] if pos != -1 else None
                 )
-            except Exception as e:
-                return JsonResponse(str(e), safe=False, status=400)
+            # except Exception as e:
+            #     return JsonResponse(str(e), safe=False, status=400)
 
         article.save()
         return JsonResponse("Article edited successfully!", safe=False, status=200)
@@ -221,6 +224,7 @@ def get_article(request):
             return JsonResponse("No id provided", safe=False, status=400)
 
         article = Article.objects.get(id=article_id)
+        is_edit_page = request.GET.get('edit', False)
         
         try:
             user = get_user_from_token_request(request)
@@ -242,7 +246,7 @@ def get_article(request):
             texts_json.append({
                 "id": text.text_id,
                 "text": text.text,
-                "image": S3Client.download_image(env('SILVERCARE_AWS_S3_ARTICLES_SUBDIR'), image_id),
+                "image": S3Client.download_image(env('SILVERCARE_AWS_S3_ARTICLES_SUBDIR'), image_id) if not is_edit_page else None,
                 "position": text.position,
             })
 
