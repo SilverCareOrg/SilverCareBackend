@@ -3,7 +3,6 @@
     <ul>
         <li><strong>Preț:</strong> [Preț Serviciu]</li>
         <li><strong>Organizator:</strong> [Organizator]</li>
-        <li><strong>Participanți:</strong> [Participanți]</li>
-        <li><strong>Număr de telefon:</strong> [Număr de telefon]</li>
+        <li><strong>Număr participanți:</strong> [Număr participanți]</li>
     </ul>
 </li>

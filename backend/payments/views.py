@@ -45,8 +45,10 @@ def checkout_cart(user, payment_obj, metadata):
     cart.save()
 
 def calculate_fee(amount):
-    FIXED_AMOUNT = 300
-    return int(amount * 0.029 + FIXED_AMOUNT)
+    FIXED_AMOUNT = 100
+    BASE_FEE = 1.4 / 100 # 1.4%
+    
+    return int(amount * BASE_FEE + FIXED_AMOUNT)
 
 @api_view(['POST'])
 def create_checkout_session(request):
@@ -103,23 +105,69 @@ def create_checkout_session(request):
         })
     
     total_amount = sum([item["price_data"]["unit_amount"] * item["quantity"] for item in line_items])
+
+    """
+     Tax calculator from customer
     
-    # try:
-    checkout_session = stripe.checkout.Session.create(
-        line_items=line_items,
-        mode='payment',
-        success_url=BASE_URL + f"/checkout-success/{cmd}",
-        cancel_url=BASE_URL + '/checkout-fail',
-        automatic_tax={'enabled': True},
-        locale="ro",
-        metadata=metadata,
-        payment_intent_data={
-            "application_fee_amount": calculate_fee(total_amount),
-            "transfer_data": {"destination": services[0].base_service.stripe_account_id},
-        },
-    )
-    # except Exception as e:
-        # return HttpResponse("Error creating checkout session: " + str(e), status = 500)
+    try:
+        payment_intent = stripe.PaymentIntent.create(
+            amount=total_amount,
+            currency='ron',
+            automatic_payment_methods={"enabled": True},
+            receipt_email=user.email,
+            metadata=metadata,
+            stripe_account=services[0].base_service.stripe_account_id,
+        )
+    except Exception as e:
+        print(e)
+        return HttpResponse("Error creating payment intent: " + str(e), status = 500)
+
+    try:
+        tax_line_items = [
+            {
+                "amount": item["price_data"]["unit_amount"] * item["quantity"],
+                "quantity": item["quantity"],
+                "reference": item["price_data"]["product_data"]["name"],
+            }
+        for item in line_items]
+        
+        # Stripe calculate tax before creating the checkout session
+        stripe_tax = stripe.tax.Calculation.create(
+            currency='ron',
+            line_items=tax_line_items,
+            customer_details={
+                "address": {
+                    "country": "RO",
+                },
+                "address_source": "billing"
+            }
+        )
+        print(tax_line_items)
+        print(stripe_tax)
+        print(stripe_tax.tax_amount_exclusive)
+    except Exception as e:
+        print(e)
+        return HttpResponse("Error calculating tax: " + str(e), status = 500)
+    """
+
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            line_items=line_items,
+            mode='payment',
+            success_url=BASE_URL + f"/checkout-success/{cmd}",
+            cancel_url=BASE_URL + '/checkout-fail',
+            automatic_tax={ "enabled": True },
+            locale="ro",
+            metadata=metadata,
+            payment_intent_data={
+                "application_fee_amount": calculate_fee(total_amount),
+                "transfer_data": {"destination": services[0].base_service.stripe_account_id},
+                "receipt_email": user.email,
+            },
+        )
+    except Exception as e:
+        print(e)
+        return HttpResponse("Error creating checkout session: " + str(e), status = 500)
     
     return JsonResponse({"id":checkout_session.id}, status=200)
 

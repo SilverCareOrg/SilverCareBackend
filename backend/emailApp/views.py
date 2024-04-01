@@ -81,10 +81,9 @@ def send_db_user_email_message(cart_services, user, user_email, metadata):
         html_service = service_template.replace("[Nume Serviciu]", base_service.name)
         html_service = html_service.replace("[Preț Serviciu]", str(price))
         html_service = html_service.replace("[Organizator]", base_service.organiser)
-        html_service = html_service.replace("[Participanți]", metadata["participants_names"])
-        html_service = html_service.replace("[Număr de telefon]", metadata["phone_number"])
-        
-        total_price += float(option.price) if option.price != 'free' else 0
+        html_service = html_service.replace("[Număr participanți]", str(service.number_of_participants))
+
+        total_price += float(option.price) * service.number_of_participants if option.price != 'free' else 0
         activities.append(html_service)
     
     introduction = introduction.replace("[Total Comandă]", str(total_price))
