@@ -43,7 +43,10 @@ def checkout_cart(user, payment_obj, metadata):
     
     cart.cartservice_set.all().delete()
     cart.save()
-    
+
+def calculate_fee(amount):
+    FIXED_AMOUNT = 300
+    return int(amount * 0.029 + FIXED_AMOUNT)
 
 @api_view(['POST'])
 def create_checkout_session(request):
@@ -98,6 +101,9 @@ def create_checkout_session(request):
                 },
             "quantity": quantity,
         })
+    
+    total_amount = sum([item["price_data"]["unit_amount"] * item["quantity"] for item in line_items])
+    
     # try:
     checkout_session = stripe.checkout.Session.create(
         line_items=line_items,
@@ -106,7 +112,11 @@ def create_checkout_session(request):
         cancel_url=BASE_URL + '/checkout-fail',
         automatic_tax={'enabled': True},
         locale="ro",
-        metadata=metadata
+        metadata=metadata,
+        payment_intent_data={
+            "application_fee_amount": calculate_fee(total_amount),
+            "transfer_data": {"destination": services[0].base_service.stripe_account_id},
+        },
     )
     # except Exception as e:
         # return HttpResponse("Error creating checkout session: " + str(e), status = 500)
@@ -127,7 +137,7 @@ def match_checkout_payment(payment_obj, checkout_obj):
             return JsonResponse({'status': 'Internal error at payment_intent.succeeded'}, status=500)
 
         payment_obj.user = user
-        
+        print("Sending email to user")
         checkout_send_email(user, user.email, metadata)
         checkout_cart(user, payment_obj, metadata)
 
@@ -136,7 +146,7 @@ def match_checkout_payment(payment_obj, checkout_obj):
 @csrf_exempt
 def stripe_webhook(request):
     payload = json.loads(request.body.decode('utf-8'))
-
+    print("Stripe webhook received.")
     secret_key = env('SILVERCARE_STRIPE_WEBHOOK_KEY')
 
     try:
@@ -147,6 +157,8 @@ def stripe_webhook(request):
         return JsonResponse(status=400)
 
     if event.type == 'payment_intent.succeeded':
+        print("Payment intent succeeded")
+        
         payment_intent_data = event.data.get('object', {})
         payment_intent_id = payment_intent_data.get('id')
         
@@ -167,6 +179,8 @@ def stripe_webhook(request):
         except Checkout.DoesNotExist:
             checkout_obj = None
     elif event.type == 'checkout.session.completed':
+        print("Checkout session completed")
+        
         payment_intent_data = event.data.get('object', {})
         payment_intent_id = payment_intent_data.get('payment_intent')
 

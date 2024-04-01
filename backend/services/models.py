@@ -62,6 +62,9 @@ class Service(models.Model):
     
     # hidden or not
     hidden = models.BooleanField(default=False)
+    
+    # stripe account id
+    stripe_account_id = models.CharField(max_length=100, null = True)
 
 
 class PurchasedService(models.Model):
