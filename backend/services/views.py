@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-from services.models import Service, ServiceOption, MapLocation
+from services.models import Service, ServiceImage, ServiceOption, MapLocation
 import json
 from django.utils.dateparse import parse_duration
 from django.utils.timezone import timedelta
@@ -21,6 +21,7 @@ import uuid
 from datetime import datetime
 from django.utils import timezone
 import re
+from s3.s3_client import S3Client
 from services.utils import delete_service_solr, add_service_solr, add_everything_solr
 
 duration_pattern = re.compile(r'(?:(?P<days>\d+)d\s*)?(?:(?P<hours>\d+)h\s*)?(?:(?P<minutes>\d+)m)?')
@@ -72,18 +73,18 @@ class CreateServiceView(APIView):
         sections = json.dumps(json.loads(sections)["sections"])
         
         file = request.FILES.get('image')
-        image_type = str(file).split('.')[-1]
+        # image_type = str(file).split('.')[-1]
 
-        # generate_file_name
-        file_name = str(uuid.uuid4())
+        # # generate_file_name
+        # file_name = str(uuid.uuid4())
 
-        if "/var/www" in PATH_TO_FIMG:
-            f = open(PATH_TO_FIMG + file_name + "." + image_type, 'wb')
-        else:
-            f = open(os.path.join(os.path.dirname(__file__), 'images/' + file_name + "." + image_type), 'wb')
+        # if "/var/www" in PATH_TO_FIMG:
+        #     f = open(PATH_TO_FIMG + file_name + "." + image_type, 'wb')
+        # else:
+        #     f = open(os.path.join(os.path.dirname(__file__), 'images/' + file_name + "." + image_type), 'wb')
 
-        f.write(file.read())
-        f.close()
+        # f.write(file.read())
+        # f.close()
         
         service_obj = Service.objects.create(name = service_name,
                                             organiser = service_organiser,
@@ -92,9 +93,129 @@ class CreateServiceView(APIView):
                                             options_common_city = service_options_common_city,
                                             common_location = service_common_location,
                                             category = service_category,
-                                            iban = service_iban,
-                                            image = file_name,
-                                            image_type = image_type)
+                                            iban = service_iban)
+        
+        # Modify this later for more images
+        service_obj.add_image(0, file)
+        
+        if service_options_common_city:
+            service_city = data.get('city')
+            service_obj.city = service_city
+            
+            service_county = data.get('county')
+            service_obj.county = service_county
+            
+        if service_common_location:
+            service_location = data.get('location')
+            service_obj.location = service_location
+            
+            service_map_location = data.get('map_location')
+            if service_map_location != "":
+                service_map_location = service_map_location.split(",")
+                latitude = float(service_map_location[0])
+                longitude = float(service_map_location[1][1:])
+                map_location_obj = MapLocation.objects.create(latitude = latitude,
+                                                                longitude = longitude)
+                service_obj.map_location = map_location_obj
+        
+        for option in options:
+            option_name = option.get("name")
+            option_price = option.get("price")
+            option_duration = option.get("duration")
+            option_location = option.get("location")
+            option_map_location = option.get("map_location")
+            option_details = option.get("details")
+            option_city = option.get("city")
+            option_county = option.get("county")
+            
+            
+            option_obj = ServiceOption.objects.create(name = option_name,
+                                                      price = option_price,
+                                                      duration = option_duration,
+                                                      location = option_location,
+                                                      details = option_details,
+                                                      city = option_city,
+                                                      county = option_county,
+                                                      service = service_obj)
+            
+            try:
+                option_date = option.get("date_time")
+                
+                if option_date != "":
+                    option_date = datetime.strptime(option.get("date_time"), "%Y-%m-%dT%H:%M")
+                    option_obj.date = option_date
+            except:
+                pass
+            
+            if option_map_location != "":
+                option_map_location = option_map_location.split(",")
+                latitude = float(option_map_location[0])
+                longitude = float(option_map_location[1][1:])
+                map_location_obj = MapLocation.objects.create(latitude = latitude,
+                                                                longitude = longitude)
+                option_obj.map_location = map_location_obj
+            
+            option_obj.save()
+            
+        service_obj.extra_details = sections
+        service_obj.save()
+        
+        return Response({'message': 'Service created successfully'})
+
+class EditServiceView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request):
+        serializer = ServiceSerializer(data=request.data)   
+        user = get_user_from_token_request(request)
+        
+        if not user.is_staff:
+            return Response({'message': 'You are not authorized to edit services'}, status=400)
+        
+        data = request.data
+        service_id = data.get('id')
+        service_obj = Service.objects.get(id = service_id)
+        
+        if service_obj is None:
+            return Response({'message': 'Service not found'}, status=400)
+        
+        service_name = data.get('name')
+        service_raw_name = unidecode(service_name)
+        service_description = data.get('description')
+        service_options_common_city = True if data.get('options_common_city') == "true" else False
+        service_common_location = True if data.get('common_location') == "true" else False
+        service_category = data.get('category')
+        service_iban = data.get('iban')
+        service_organiser = data.get('organiser')
+        
+        options = data.get("options")
+        options = json.loads(options)
+        
+        if len(options) == 0:
+            return Response({'message': 'You need to add at least one option'}, status=400)
+        
+        sections = data.get("sections")
+        sections = json.dumps(json.loads(sections)["sections"])
+        
+        file = request.FILES.get('image')
+        
+        service_obj.add_image(0, file)
+        
+        service_obj.name = service_name
+        service_obj.organiser = service_organiser
+        service_obj.raw_name = service_raw_name
+        service_obj.description = service_description
+        service_obj.options_common_city = service_options_common_city
+        service_obj.common_location = service_common_location
+        service_obj.category = service_category
+        service_obj.iban = service_iban
+        
+        # delete all options and add them again
+        ServiceOption.objects.filter(service = service_obj).delete()
         
         if service_options_common_city:
             service_city = data.get('city')
@@ -165,14 +286,15 @@ def get_services_helper(services):
     bef = []
 
     for service in services:
+        service_images = ServiceImage.objects.filter(service = service)
+        
         serialized_service = {
             "hidden": service.hidden,
             "name": service.name,
             "id": service.id,
             "category": service.category.capitalize(),
             "description": service.description,
-            "img_path": service.image + "." + service.image_type,
-            "img_type": service.image_type,
+            "image_path": [S3Client.download_image(env('SILVERCARE_AWS_S3_SERVICES_SUBDIR'), svc_img.id) for svc_img in service_images],
             "organiser": service.organiser,
             "service_id": service.id,
             "options_common_city": service.options_common_city,
@@ -201,7 +323,7 @@ def get_services_helper(services):
         }
 
         res.append(serialized_service)
-        bef.append(service.image + "." + service.image_type)
+        # bef.append(service.image + "." + service.image_type)
 
     return res, bef
 
