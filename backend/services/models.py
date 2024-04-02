@@ -1,12 +1,24 @@
 from django.db import models
+from s3.s3_client import S3Client
 from django.http import JsonResponse
 from django.contrib.auth.models import User
-import json
 from enum import Enum
+import environ
+import json
+import uuid
+
+# Environment variables
+env = environ.Env()
+environ.Env.read_env()
 
 # Featuring
 class DetailType(Enum):
     pass
+
+class ServiceImage(models.Model):
+    id = models.CharField(max_length=37, primary_key=True)
+    position = models.IntegerField()
+    service = models.ForeignKey("Service", on_delete=models.SET_NULL, null=True)
 
 class MapLocation(models.Model):
     latitude = models.FloatField(default=0)
@@ -36,8 +48,8 @@ class ServiceOption(models.Model):
 class Service(models.Model):
     # Base information about the service
     description = models.CharField(max_length=1500)
-    image = models.CharField(max_length=100)
-    image_type = models.CharField(max_length=10)    
+    image = models.CharField(max_length=100, null=True)
+    image_type = models.CharField(max_length=10, null=True)
     name = models.CharField(max_length=100)
     category = models.CharField(max_length=100, null = True)
     
@@ -66,7 +78,21 @@ class Service(models.Model):
     # stripe account id
     stripe_account_id = models.CharField(max_length=100, null = True)
 
+    def add_image(self, position, image_data):
+        if image_data is None:
+            raise Exception("No image data provided")
+        
+        # If there is already an image for this id, delete it
+        if ServiceImage.objects.filter(service=self).exists():
+            ServiceImage.objects.get(service=self).delete()
+        
+        image = ServiceImage(id=str(uuid.uuid4()), position=position, service=self)
+        image.save()
 
+        # Save image with the id
+        S3Client.get_instance()
+        S3Client.upload_image_encode_base64(env('SILVERCARE_AWS_S3_SERVICES_SUBDIR'), image.id, image_data)
+        
 class PurchasedService(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null = True)
     base_service = models.ForeignKey(Service, on_delete=models.SET_NULL, null = True)
