@@ -50,7 +50,7 @@ def get_services(request):
     services = Service.objects.all()# if searched == '' else search_helper(searched)
 
     # Filter by category
-    if category is None or (category is not None and category != ''):
+    if category is not None and category != '':
         services = services.filter(category__contains = category)
     
     # Filter by location - main service or options
@@ -80,7 +80,7 @@ def get_services(request):
             "organiser": service["organiser"],
             "hidden": service["hidden"]
         } for service in services]
-
+    print([service for service in services if not service["hidden"]])
     try:
         user = get_user_from_token_request(request)
         if not user.is_staff:
