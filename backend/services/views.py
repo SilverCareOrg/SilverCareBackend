@@ -319,7 +319,7 @@ def get_services_helper(services):
                     "id": option.id
                 }
                 for option in ServiceOption.objects.filter(service = service)],
-            "sections": json.loads(service.extra_details),
+            "sections": json.loads(service.extra_details) if service.extra_details else None,
         }
 
         res.append(serialized_service)
