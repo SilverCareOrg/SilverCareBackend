@@ -47,7 +47,7 @@ def get_services(request):
         inf_lim, sup_lim = sup_lim, inf_lim
 
     # Get all services
-    services = Service.objects.all() if searched == '' else search_helper(searched)
+    services = Service.objects.all()# if searched == '' else search_helper(searched)
 
     # Filter by category
     if category is not None and category != '':
