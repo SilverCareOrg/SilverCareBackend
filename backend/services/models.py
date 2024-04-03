@@ -11,6 +11,8 @@ import uuid
 env = environ.Env()
 environ.Env.read_env()
 
+MAX_DESCRIPTION_LENGTH = 15000
+
 # Featuring
 class DetailType(Enum):
     pass
@@ -39,7 +41,7 @@ class ServiceOption(models.Model):
     map_location = models.OneToOneField(MapLocation, on_delete=models.SET_NULL, null=True)
     rating = models.FloatField(default=0)
     number_ratings = models.IntegerField(default=0)
-    details = models.CharField(max_length=3000, null = True)
+    details = models.TextField(null = True)
     city = models.CharField(default="",max_length=100, null = True)
     county = models.CharField(default="",max_length=100, null = True)
 
@@ -47,7 +49,7 @@ class ServiceOption(models.Model):
 
 class Service(models.Model):
     # Base information about the service
-    description = models.CharField(max_length=1500)
+    description = models.TextField()
     image = models.CharField(max_length=100, null=True)
     image_type = models.CharField(max_length=10, null=True)
     name = models.CharField(max_length=100)
