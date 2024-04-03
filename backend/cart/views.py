@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-from services.models import Service
+from services.models import Service, ServiceImage
 import json
 from django.http import HttpResponse, JsonResponse
 from login.utils import get_user_from_token_request
@@ -12,7 +12,12 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 import os
 from .models import Cart
+import environ
 from services.models import CartService, Service, PurchasedService, ServiceOption
+from s3.s3_client import S3Client
+
+env = environ.Env()
+environ.Env.read_env()
 
 @api_view(["POST"])
 def add_to_cart(request):
@@ -50,6 +55,8 @@ def serialize_cart_services(cart_services):
     cart_services_json = []
     
     for cart_service in cart_services:
+        service_images = ServiceImage.objects.filter(service = cart_service.base_service)
+        
         cart_services_json.append({
             "base_service_id": cart_service.base_service.id,
             "service_id": cart_service.id,
@@ -70,7 +77,7 @@ def serialize_cart_services(cart_services):
                 },
             "price": cart_service.option.price * cart_service.number_of_participants,
             "number_of_participants": cart_service.number_of_participants,
-            "service_image_path": cart_service.base_service.image + "." + cart_service.base_service.image_type,
+            "service_image_path": [S3Client.download_image(env('SILVERCARE_AWS_S3_SERVICES_SUBDIR'), svc_img.id) for svc_img in cart_service.service_images],
         })
         
     return cart_services_json
