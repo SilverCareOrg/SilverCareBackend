@@ -77,7 +77,7 @@ def serialize_cart_services(cart_services):
                 },
             "price": cart_service.option.price * cart_service.number_of_participants,
             "number_of_participants": cart_service.number_of_participants,
-            "service_image_path": [S3Client.download_image(env('SILVERCARE_AWS_S3_SERVICES_SUBDIR'), svc_img.id) for svc_img in cart_service.service_images],
+            "service_image_path": [S3Client.download_image(env('SILVERCARE_AWS_S3_SERVICES_SUBDIR'), svc_img.id) for svc_img in service_images],
         })
         
     return cart_services_json
