@@ -50,7 +50,7 @@ def get_services(request):
     services = Service.objects.all()# if searched == '' else search_helper(searched)
 
     # Filter by category
-    if category is not None and category != '':
+    if category is None or (category is not None and category != ''):
         services = services.filter(category__contains = category)
     
     # Filter by location - main service or options
