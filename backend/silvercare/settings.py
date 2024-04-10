@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 import environ
 from datetime import timedelta
-from s3.s3_client import S3Client
 import os
 import pymysql
 
@@ -27,11 +26,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 env = environ.Env()
 environ.Env.read_env()
 
+from s3.s3_client import S3Client
+S3Client.get_instance()
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
-
-# instantiate S3
-S3Client.get_instance()
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SILVERCARE_SECRET_KEY')
