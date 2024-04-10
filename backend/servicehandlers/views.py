@@ -74,9 +74,9 @@ def get_services(request):
     # Filter by location - main service or options
     if location is not None and location != '':
         services = location_filter(services, location)
-    
+
     # Filter by category
-    if category is not None and category != '':
+    if category is not None and category != '' and len(category) != 0:
         services = list(filter(lambda x: category in x.category, services))
 
     if sort is not None and sort == 'ascending':
@@ -86,6 +86,13 @@ def get_services(request):
 
     # instantiate s3
     S3Client.get_instance()
+
+    try:
+        user = get_user_from_token_request(request)
+        if not user.is_staff:
+            services = [service for service in services if not service.hidden]
+    except:
+        services = [service for service in services if not service.hidden]
 
     total = len(services)
     services, _ = get_services_helper(services[inf_lim:sup_lim])
@@ -105,13 +112,6 @@ def get_services(request):
             "organiser": service["organiser"],
             "hidden": service["hidden"]
         } for service in services]
-
-    try:
-        user = get_user_from_token_request(request)
-        if not user.is_staff:
-            services = [service for service in services if not service["hidden"]]
-    except:
-        services = [service for service in services if not service["hidden"]]
 
     return JsonResponse({"services":services, "total":total}, safe = False, status=200)
  
