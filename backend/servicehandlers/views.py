@@ -121,6 +121,7 @@ def get_link_services(request):
     total = len(services)
 
     type_of_query = request.GET.get('type_of_query', ServicesQueryType.NORMAL.value)
+    S3Client.get_instance()
 
     try:
         type_of_query = int(type_of_query)
@@ -147,6 +148,7 @@ def get_link_services(request):
  
 @api_view(['GET'])
 def get_service_by_id(request):
+    S3Client.get_instance()
     id = request.GET.get('id', "")
     service = Service.objects.filter(id = id)
     service = get_services_helper(service)
@@ -154,6 +156,7 @@ def get_service_by_id(request):
 
 @api_view(['GET'])
 def get_link_service_by_id(request):
+    S3Client.get_instance()
     id = request.GET.get('id', "")
     service = LinkService.objects.filter(id = id)
     service = get_services_helper(service)
