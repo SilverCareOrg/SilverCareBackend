@@ -17,10 +17,42 @@ MAX_DESCRIPTION_LENGTH = 15000
 class DetailType(Enum):
     pass
 
+class LinkServiceImage(models.Model):
+    id = models.CharField(max_length=37, primary_key=True)
+    service = models.ForeignKey("LinkService", on_delete=models.SET_NULL, null=True)
+
 class ServiceImage(models.Model):
     id = models.CharField(max_length=37, primary_key=True)
     position = models.IntegerField()
     service = models.ForeignKey("Service", on_delete=models.SET_NULL, null=True)
+
+class LinkService(models.Model):
+    """
+        This is basically an url that redirects to a service from a provider website.
+    """
+    url = models.CharField(max_length=1000)
+    name = models.CharField(max_length=100)
+    price = models.FloatField(default=0)
+    last_edit = models.DateTimeField(auto_now=True)
+    category = models.CharField(max_length=100)
+    organiser = models.CharField(max_length=100)
+    hidden = models.BooleanField(default=False)
+    city = models.CharField(default="", max_length=100, null = True)
+
+    def add_image(self, image_data):
+        if image_data is None:
+            raise Exception("No image data provided")
+        
+        # If there is already an image for this id, delete it
+        if LinkServiceImage.objects.filter(service=self).exists():
+            LinkServiceImage.objects.get(service=self).delete()
+        
+        image = LinkServiceImage(id=str(uuid.uuid4()), service=self)
+        image.save()
+
+        # Save image with the id
+        S3Client.get_instance()
+        S3Client.upload_image_encode_base64(env('SILVERCARE_AWS_S3_SERVICES_SUBDIR'), image.id, image_data)
 
 class MapLocation(models.Model):
     latitude = models.FloatField(default=0)

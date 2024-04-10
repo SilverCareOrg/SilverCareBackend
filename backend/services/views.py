@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-from services.models import Service, ServiceImage, ServiceOption, MapLocation
+from services.models import Service, ServiceImage, ServiceOption, MapLocation, LinkService, LinkServiceImage
 import json
 from django.utils.dateparse import parse_duration
 from django.utils.timezone import timedelta
@@ -31,6 +31,92 @@ environ.Env.read_env()
 
 BASE_IMG_PATH = "./services/images/"
 PATH_TO_FIMG = env("SILVERCARE_PATH_TO_FIMG")
+
+class LinkServiceSerializer(serializers.Serializer):
+    url = serializers.CharField(max_length=1000)
+    name = serializers.CharField(max_length=100)
+    price_range = serializers.CharField(max_length=100)
+    category = serializers.CharField(max_length=100)
+    organiser = serializers.CharField(max_length=100)
+
+class CreateLinkServiceView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request):
+        serializer = LinkServiceSerializer(data=request.data)   
+        user = get_user_from_token_request(request)
+        
+        if not user.is_staff:
+            return Response({'message': 'You are not authorized to add services'}, status=400)
+        
+        data = request.data
+        url = data.get('url')
+        name = data.get('name')
+        price = data.get('price')
+        category = data.get('category')
+        organiser = data.get('organiser')
+        city = data.get('city')
+        
+        link_service_obj = LinkService.objects.create(url = url,
+                                                      name = name,
+                                                      price = price,
+                                                      category = category,
+                                                      organiser = organiser,
+                                                      city = city,
+                                                      last_edit = timezone.now())
+        
+        file = request.FILES.get('image')
+        link_service_obj.add_image(file)
+        link_service_obj.save()
+        
+        return Response({'message': 'Link service created successfully'})
+
+class EditLinkServiceView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    @method_decorator(csrf_exempt)
+    def post(self, request):
+        serializer = LinkServiceSerializer(data=request.data)   
+        user = get_user_from_token_request(request)
+        
+        if not user.is_staff:
+            return Response({'message': 'You are not authorized to edit services'}, status=400)
+        
+        data = request.data
+        url = data.get('url')
+        name = data.get('name')
+        price = data.get('price')
+        category = data.get('category')
+        organiser = data.get('organiser')
+        id = data.get('id')
+        city = data.get('city')
+        
+        link_service_obj = LinkService.objects.get(id = id)
+        
+        if link_service_obj is None:
+            return Response({'message': 'Link service not found'}, status=400)
+        
+        link_service_obj.url = url
+        link_service_obj.name = name
+        link_service_obj.price = price
+        link_service_obj.category = category
+        link_service_obj.organiser = organiser
+        link_service_obj.city = city
+        link_service_obj.last_edit = timezone.now()
+        
+        file = request.FILES.get('image')
+        link_service_obj.add_image(file)
+        link_service_obj.save()
+        
+        return Response({'message': 'Link service edited successfully'})
 
 class ServiceSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
@@ -73,19 +159,6 @@ class CreateServiceView(APIView):
         sections = json.dumps(json.loads(sections)["sections"])
         
         file = request.FILES.get('image')
-        # image_type = str(file).split('.')[-1]
-
-        # # generate_file_name
-        # file_name = str(uuid.uuid4())
-
-        # if "/var/www" in PATH_TO_FIMG:
-        #     f = open(PATH_TO_FIMG + file_name + "." + image_type, 'wb')
-        # else:
-        #     f = open(os.path.join(os.path.dirname(__file__), 'images/' + file_name + "." + image_type), 'wb')
-
-        # f.write(file.read())
-        # f.close()
-        
         service_obj = Service.objects.create(name = service_name,
                                             organiser = service_organiser,
                                             raw_name = service_raw_name,
@@ -286,6 +359,22 @@ def get_services_helper(services):
     bef = []
 
     for service in services:
+        if isinstance(service, LinkService):
+            service_images = LinkServiceImage.objects.filter(service = service)
+            
+            res.append({
+                "hidden": False,
+                "name": service.name,
+                "id": service.id,
+                "category": service.category.capitalize(),
+                "image_path": [S3Client.download_image(env('SILVERCARE_AWS_S3_SERVICES_SUBDIR'), svc_img.id) for svc_img in service_images],
+                "organiser": service.organiser,
+                "city": service.city,
+                "price": service.price,
+                "url": service.url,
+            })
+            continue
+        
         service_images = ServiceImage.objects.filter(service = service)
         
         serialized_service = {
@@ -390,6 +479,26 @@ def set_service_visibility(request):
         return JsonResponse("Missing parameters", safe=False, status=400)
     
     svc = Service.objects.get(id=data["id"])
+
+    if svc is None:
+        return JsonResponse("Service not found", safe=False, status=400)
+    
+    svc.hidden = data["hidden"]
+    svc.save()
+    return JsonResponse("Service hidden status updated successfully!", safe=False, status=200)
+
+@api_view(["POST"])
+def set_link_service_visibility(request):
+    user = get_user_from_token_request(request)
+    if not user.is_staff:
+        return JsonResponse({'message': 'You are not authorized to hide services'}, status=403)
+
+    data = json.loads(request.body)
+    
+    if "hidden" not in data or "id" not in data:
+        return JsonResponse("Missing parameters", safe=False, status=400)
+    
+    svc = LinkService.objects.get(id=data["id"])
 
     if svc is None:
         return JsonResponse("Service not found", safe=False, status=400)
